@@ -1,0 +1,58 @@
+COMPILACIÓN KERNEL
+
+
+Lo primero que tenemos que hacer es instalar el kernel:
+
+apt install linux-source
+
+Creamos un directorio en home, pasamos el archivo y lo descomprimimos:
+
+mkdir kernel
+tar -xf ficheroempaquetado.tar.xz
+
+Ahora copiamos el .config de nuestro kernel actual:
+
+cp /boot/config-4.19.0-6-amd64 .config
+
+Podemos quitar de una vez los módulos que no se estan usando:
+
+make localmodconfig
+
+Para configurar los módulos que quieres quitar:
+
+make nconfig
+
+Para compilar:
+
+make -j8 deb-pkg (te compila con todos los nucleos y te genera un fichero para que sea portable)
+[En este caso, nos faltaba una librería, "libssl-dev"]
+
+INSTALAR KERNEL
+
+dpkg -i linux-image-loquesea
+
+DESINSTALAR KERNEL
+
+Vemos los kernel instalados en nuestra máquina:
+
+dpkg -l | grep linux-image
+
+Seleccionamos el que queremos desinstalar:
+
+apt-get remove --purge linux-image-loquesea
+
+---------
+
+Primeros pasos:
+
+make localmodconfig
+
+-j8 para usar los 8 nucleos (make -j8 INSTALL_MOD_STRIP=1 deb-pkg)
+
+Comparamos los que nos ha dejado tras el localmodconfig con los que había antes:
+Dinamicos:
+grep =m .config|wc -l
+grep =m /boot/config-4.19.0-6-amd64|wc -l
+grep =y .config|wc -l
+grep =y /boot/config-4.19.0-6-amd64|wc -l
+

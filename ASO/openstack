@@ -1,0 +1,7 @@
+apt-get install python3-venv
+
+python3 -m venv ~/.virtualenv/openstack
+source ~/.virtualenv/openstack/bin/activate
+pip install python-openstackclient
+apt install libpython3-dev
+Descargar de openstack: RC

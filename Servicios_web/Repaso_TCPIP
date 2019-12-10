@@ -1,0 +1,5 @@
+Nos conectamos a una web por DNS (nombre)
+
+192.168.1.4 (privada) -> Si quiero conectarme al exterior, se sustituye nuestra ip privada por una publica a traves del SNAT -> 80.59.1.152 (publica)
+
+Si tenemos un servidor web con ip privada, y se quieren conectar desde el exterior, se sustituira la ip privada por una pública a traves del DNAT.

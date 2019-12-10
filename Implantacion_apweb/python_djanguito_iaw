@@ -1,0 +1,352 @@
+Tarea 1
+
+1.
+
+Realizamos el fork:
+
+!fork.png!
+
+2.
+
+Hacemos el fork y clonamos el repositorio en nuestra máquina:
+
+ftirado@nazo:~/python_app$ git clone git@github.com:ftiradob/iaw_gestionGN.git
+
+3.
+
+Creamos el entorno virtual:
+
+ftirado@nazo:~/venv$ python3 -m venv djanguito
+
+Instalamos las dependencias necesarias:
+
+(djanguito) ftirado@nazo:~/python_app/iaw_gestionGN$ sudo apt install python3-dev
+(djanguito) ftirado@nazo:~/python_app/iaw_gestionGN$ pip3 install wheel
+(djanguito) ftirado@nazo:~/python_app/iaw_gestionGN$ sudo apt install libjpeg-dev
+
+Instalamos el "requirements":
+
+(djanguito) ftirado@nazo:~/python_app/iaw_gestionGN$ pip install -r requirements.txt
+
+4.
+
+Comprobamos que efectivamente se esta usando sqlite y le cambiamos el nombre a nuestra base de datos:
+
+(djanguito) ftirado@nazo:~/python_app/iaw_gestionGN/gestion$ sudo nano settings.py
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'djanguito_db'),
+    }
+}
+
+
+5.
+
+Creamos la base de datos:
+
+(djanguito) ftirado@nazo:~/python_app/iaw_gestionGN$ python3 manage.py migrate
+Operations to perform:
+  Apply all migrations: admin, auth, centro, contenttypes, convivencia, sessions
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying auth.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying centro.0001_initial... OK
+  Applying centro.0002_cursos_equipoeducativo... OK
+  Applying centro.0003_auto_20161102_1656... OK
+  Applying centro.0004_auto_20161102_1721... OK
+  Applying centro.0005_auto_20161105_1217... OK
+  Applying centro.0006_auto_20161106_1741... OK
+  Applying convivencia.0001_initial... OK
+  Applying sessions.0001_initial... OK
+
+6.
+
+Añadimos los datos de prueba a la base de datos:
+
+(djanguito) ftirado@nazo:~/python_app/iaw_gestionGN$ ./manage.py loaddata datos.json 
+Installed 89 object(s) from 1 fixture(s)
+
+7.
+
+Ejecutamos el servidor en desarrollo:
+
+(djanguito) ftirado@nazo:~/python_app/iaw_gestionGN$ python3 manage.py runserver
+
+Entramos en la zona de administración:
+
+!logadminjosedom.png!
+
+!adminjosedom.png!
+
+8.
+
+Entramos mediante el usuario:
+
+!logusuariojosedom.png!
+
+!usuariojosedom.png!
+
+Tarea 2
+
+Modificamos la página inicial:
+
+(djanguito) ftirado@nazo:~/python_app/iaw_gestionGN/templates$ sudo nano base.html 
+
+...
+<div class="masthead">
+	<h3 class="text-muted">Gestiona - IES Gonzalo Nazareno - Fernando Tirado, delegado </h3>
+</div>
+...
+
+Subimos los cambios a github:
+
+(djanguito) ftirado@nazo:~/python_app/iaw_gestionGN$ git commit -am "cambio a pagina de inicio"
+(djanguito) ftirado@nazo:~/python_app/iaw_gestionGN$ git push
+
+Ejecutamos el servidor:
+
+(djanguito) ftirado@nazo:~/python_app/iaw_gestionGN$ python3 manage.py runserver
+
+Probamos y vemos el cambio:
+
+!delegadojosedom.png!
+
+Tarea 3
+
+1.
+
+Instalamos lo necesario para el entorno de producción:
+
+debian@python-djanguito:~$ sudo apt install apache2
+debian@python-djanguito:~$ sudo apt install libapache2-mod-wsgi-py3
+debian@python-djanguito:~$ sudo apt install mysql-common
+
+2.
+
+Clonamos el repositorio:
+
+debian@python-djanguito:/var/www/html$ sudo git clone https://github.com/ftiradob/iaw_gestionGN.git
+
+3.
+
+Creamos el entorno virtual e instalamos dependencias:
+
+debian@python-djanguito:~$ sudo apt install python3-venv
+debian@python-djanguito:~/venv$ python3 -m venv djanguito
+(djanguito) debian@python-djanguito:/var/www/html/iaw_gestionGN$ sudo apt-get install python3 python-dev python3-dev build-essential libssl-dev libffi-dev libxml2-dev libxslt1-dev zlib1g-dev python-pip libjpeg-dev
+(djanguito) debian@python-djanguito:/var/www/html/iaw_gestionGN$ pip install -r requirements.txt
+
+4.
+
+Instalamos modulos que habilitan que python trabaje con mysql:
+
+(djanguito) debian@python-djanguito:/var/www/html/iaw_gestionGN$ sudo apt install python3-mysqldb
+
+(djanguito) debian@python-djanguito:/var/www/html/iaw_gestionGN$ pip install mysql-connector-python
+
+5.
+
+Creamos el virtualhost:
+
+(djanguito) debian@python-djanguito:/etc/apache2/sites-available$ sudo nano djanguito.conf
+
+<VirtualHost *:80>
+	
+	ServerName www.djanguitofernando.com
+	ServerAdmin webmaster@localhost
+	DocumentRoot /var/www/html/iaw_gestionGN
+
+	WSGIDaemonProcess djanguito user=www-data group=www-data processes=5 python-path=/var/www/html/iaw_gestionGN:/home/debian/venv/djanguito/lib64/python3.7/site-packages
+	WSGIScriptAlias / /var/www/html/iaw_gestionGN/gestion/wsgi.py
+
+	Alias "/static/" "/var/www/html/iaw_gestionGN/static/"
+	<Directory /var/www/html/iaw_gestionGN/static/>
+		Options +FollowSymLinks
+		Require all granted
+	</Directory>
+
+	<Directory /var/www/html/iaw_gestionGN>
+		WSGIProcessGroup djanguito
+		WSGIApplicationGroup %{GLOBAL}
+		Require all granted
+	</Directory>	
+	
+
+	ErrorLog ${APACHE_LOG_DIR}/error.log
+	CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+</VirtualHost>
+
+# vim: syntax=apache ts=4 sw=4 sts=4 sr noet
+
+Activamos el virtualhost y reiniciamos:
+
+(djanguito) debian@python-djanguito:/etc/apache2/sites-available$ sudo a2ensite djanguito.conf 
+(djanguito) debian@python-djanguito:/etc/apache2/sites-available$ sudo systemctl restart apache2.service
+
+6.
+
+Creamos la base de datos, el usuario y le damos permiso:
+
+MariaDB [(none)]> create database djanguito_db;
+MariaDB [(none)]> create user 'djanguito' identified by 'dios';
+MariaDB [(none)]> grant all on djanguito_db.* to djanguito@localhost identified by 'dios';
+
+7.
+
+Modificamos la configuración de la base de datos:
+
+(djanguito) debian@python-djanguito:/var/www/html/iaw_gestionGN/gestion$ sudo nano settings.py
+
+ALLOWED_HOSTS = ['www.djanguitofernando.com']
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'mysql.connector.django',
+        'NAME': 'djanguito_db',
+        'USER': 'djanguito',
+        'PASSWORD': 'dios',
+        'HOST': 'localhost',
+        'PORT':'',
+    }
+}
+
+8.
+
+Creamos las tablas y cargamos los datos:
+
+(djanguito) debian@python-djanguito:/var/www/html/iaw_gestionGN$ python3 manage.py migrate
+(djanguito) debian@python-djanguito:/var/www/html/iaw_gestionGN$ ./manage.py loaddata datos.json
+
+Accedemos y comprobamos que efectivamente se han creado las tablas:
+
+MariaDB [djanguito_db]> show tables;
++---------------------------------+
+| Tables_in_djanguito_db          |
++---------------------------------+
+| auth_group                      |
+| auth_group_permissions          |
+| auth_permission                 |
+| auth_user                       |
+| auth_user_groups                |
+| auth_user_user_permissions      |
+| centro_alumnos                  |
+| centro_areas                    |
+| centro_areas_Departamentos      |
+| centro_cursos                   |
+| centro_cursos_EquipoEducativo   |
+| centro_departamentos            |
+| centro_profesores               |
+| convivencia_amonestaciones      |
+| convivencia_sanciones           |
+| convivencia_tiposamonestaciones |
+| django_admin_log                |
+| django_content_type             |
+| django_migrations               |
+| django_session                  |
++---------------------------------+
+20 rows in set (0.001 sec)
+
+9.
+
+Ponemos el "DEBUG" a "False":
+
+(djanguito) debian@python-djanguito:/var/www/html/iaw_gestionGN/gestion$ sudo nano settings.py
+
+DEBUG = False
+
+10.
+
+Comprobamos que funciona conectándonos con el usuario "usuario" por ejemplo:
+
+
+!cloudusuario.png!
+
+
+!cloudusuariofinal.png!
+
+
+Tarea 4
+
+1.
+
+Nos descargamos una imagen de internet y modificamos la ruta del index.html:
+
+ftirado@nazo:~/python_app/iaw_gestionGN/templates$ sudo nano index.html 
+
+<center><img src="/static/img/lobo.jpg"/></center>
+
+Ahora lo subimos a git y probamos primero en local:
+
+
+!lobolocal.png!
+
+Ahora hacemos un pull en producción y probamos:
+
+debian@python-djanguito:/var/www/html/iaw_gestionGN$ sudo git pull
+
+!loboproduccion.png!
+
+2.
+
+Añadimos el módulo pedido:
+
+ftirado@nazo:~/python_app/iaw_gestionGN/centro$ sudo nano models.py
+
+class Modulos(models.Model):
+	Abr = models.CharField(max_length=4)
+	Nombre = models.CharField(max_length=50)
+	Unidad = models.ForeignKey(Cursos,blank=True,null=True,on_delete=models.SET_NULL)
+
+	def __unicode__(self):
+		return self.Abr+" - "+self.Nombre
+
+	class Meta:
+		verbose_name="Modulo"
+		verbose_name_plural="Modulos"
+
+Creamos una nueva migración:
+
+(djanguito) ftirado@nazo:~/python_app/iaw_gestionGN$ python3 manage.py makemigrations
+Migrations for 'centro':
+  centro/migrations/0007_modulos.py
+    - Create model Modulos
+
+Realizamos la migración:
+
+(djanguito) ftirado@nazo:~/python_app/iaw_gestionGN$ python3 manage.py migrate
+Operations to perform:
+  Apply all migrations: admin, auth, centro, contenttypes, convivencia, sessions
+Running migrations:
+  Applying centro.0007_modulos... OK
+
+Añadimos el nuevo módulo en la administración:
+
+(djanguito) ftirado@nazo:~/python_app/iaw_gestionGN/centro$ sudo nano admin.py
+
+from centro.models import Cursos,Alumnos,Departamentos,Profesores,Areas,Modulos
+admin.site.register(Modulos)
+
+Por último, hacemos un pull en producción y probamos:
+
+debian@python-djanguito:/var/www/html/iaw_gestionGN$ sudo git pull
+
+Vemos que la tabla se ha creado correctamente:
+
+!modulonuevo.png!

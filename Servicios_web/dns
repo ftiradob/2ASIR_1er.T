@@ -1,0 +1,1233 @@
+DNS forward (DNSmasq): No es capaz de hacer las preguntas recursivas
+
+Tarea 1
+
+En el servidor:
+
+vagrant@fernando:~$ sudo apt install dnsmasq
+
+vagrant@fernando:~$ sudo nano /etc/hosts
+
+192.168.1.200 www.iesgn.org
+192.168.1.201 departamentos.iesgn.org
+192.168.1.202 fernando.iesgn.org
+
+vagrant@fernando:~$ sudo nano /etc/dnsmasq.conf
+
+strict-order
+interface=eth2
+
+vagrant@fernando:~$ sudo systemctl restart dnsmasq.service
+
+En el cliente:
+
+vagrant@dns2:~$ sudo apt install dnsutils
+
+vagrant@dns2:~$ sudo nano /etc/resolv.conf
+
+nameserver 192.168.100.1
+
+Comprobamos:
+
+vagrant@dns2:~$ dig www.iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> www.iesgn.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 23273
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;www.iesgn.org.			IN	A
+
+;; ANSWER SECTION:
+www.iesgn.org.		0	IN	A	192.168.1.200
+
+;; Query time: 0 msec
+;; SERVER: 192.168.100.1#53(192.168.100.1)
+;; WHEN: Tue Nov 19 08:35:42 GMT 2019
+;; MSG SIZE  rcvd: 58
+
+vagrant@dns2:~$ dig www.josedomingo.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> www.josedomingo.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 60189
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 5, ADDITIONAL: 6
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: c387e16d2913c14298d8fa755dd3a96a09f799c943cef1d7 (good)
+;; QUESTION SECTION:
+;www.josedomingo.org.		IN	A
+
+;; ANSWER SECTION:
+www.josedomingo.org.	485	IN	CNAME	playerone.josedomingo.org.
+playerone.josedomingo.org. 534	IN	A	137.74.161.90
+
+;; AUTHORITY SECTION:
+josedomingo.org.	81383	IN	NS	ns3.cdmon.net.
+josedomingo.org.	81383	IN	NS	ns4.cdmondns-01.org.
+josedomingo.org.	81383	IN	NS	ns5.cdmondns-01.com.
+josedomingo.org.	81383	IN	NS	ns2.cdmon.net.
+josedomingo.org.	81383	IN	NS	ns1.cdmon.net.
+
+;; ADDITIONAL SECTION:
+ns1.cdmon.net.		167783	IN	A	35.189.106.232
+ns2.cdmon.net.		167783	IN	A	35.195.57.29
+ns3.cdmon.net.		167783	IN	A	35.157.47.125
+ns4.cdmondns-01.org.	81383	IN	A	52.58.66.183
+ns5.cdmondns-01.com.	167783	IN	A	52.59.146.62
+
+;; Query time: 7 msec
+;; SERVER: 192.168.100.1#53(192.168.100.1)
+;; WHEN: Tue Nov 19 08:35:54 GMT 2019
+;; MSG SIZE  rcvd: 322
+
+
+Comprobamos que la primera vez tarda más que la segunda:
+
+vagrant@dns2:~$ dig www.3djuegos.com
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> www.3djuegos.com
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 60767
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 3, ADDITIONAL: 4
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: 235c897ab0130915e51888fb5dd3a9e7a0c8b63b672e0c05 (good)
+;; QUESTION SECTION:
+;www.3djuegos.com.		IN	A
+
+;; ANSWER SECTION:
+www.3djuegos.com.	300	IN	A	5.145.168.97
+
+;; AUTHORITY SECTION:
+3djuegos.com.		81995	IN	NS	a.ns.joker.com.
+3djuegos.com.		81995	IN	NS	b.ns.joker.com.
+3djuegos.com.		81995	IN	NS	c.ns.joker.com.
+
+;; ADDITIONAL SECTION:
+a.ns.joker.com.		81995	IN	A	149.56.15.118
+b.ns.joker.com.		81995	IN	A	159.25.97.69
+c.ns.joker.com.		81995	IN	A	85.25.110.247
+
+;; Query time: 78 msec
+;; SERVER: 192.168.100.1#53(192.168.100.1)
+;; WHEN: Tue Nov 19 08:37:59 GMT 2019
+;; MSG SIZE  rcvd: 194
+
+vagrant@dns2:~$ dig www.3djuegos.com
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> www.3djuegos.com
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 13745
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;www.3djuegos.com.		IN	A
+
+;; ANSWER SECTION:
+www.3djuegos.com.	297	IN	A	5.145.168.97
+
+;; Query time: 0 msec
+;; SERVER: 192.168.100.1#53(192.168.100.1)
+;; WHEN: Tue Nov 19 08:38:02 GMT 2019
+;; MSG SIZE  rcvd: 61
+
+Comprobamos /etc/hosts del cliente:
+
+vagrant@dns2:~$ cat /etc/hosts
+127.0.0.1	localhost
+127.0.1.1	dns2	dns2
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+Realizamos una consulta directa al servidor dns:
+
+vagrant@dns2:~$ dig fernando.iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> fernando.iesgn.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 19931
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;fernando.iesgn.org.		IN	A
+
+;; ANSWER SECTION:
+fernando.iesgn.org.	0	IN	A	192.168.1.202
+
+;; Query time: 0 msec
+;; SERVER: 192.168.100.1#53(192.168.100.1)
+;; WHEN: Tue Nov 19 08:58:44 GMT 2019
+;; MSG SIZE  rcvd: 63
+
+Ahora realizamos una resolución inversa:
+
+vagrant@dns2:~$ dig -x 192.168.1.202
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> -x 192.168.1.202
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 3011
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;202.1.168.192.in-addr.arpa.	IN	PTR
+
+;; ANSWER SECTION:
+202.1.168.192.in-addr.arpa. 0	IN	PTR	fernando.iesgn.org.
+
+;; Query time: 0 msec
+;; SERVER: 192.168.100.1#53(192.168.100.1)
+;; WHEN: Tue Nov 19 08:58:56 GMT 2019
+;; MSG SIZE  rcvd: 87
+
+Tarea 2
+
+Indicamos las zonas con autoridad en el siguiente archivo:
+
+vagrant@dns:/etc/bind$ cat named.conf.local 
+
+zone "iesgn.org"
+{
+  file "db.iesgn.org";
+  type master;
+};
+
+zone "0.0.10.in-addr.arpa"
+{
+  file "db.10.0.0";
+  type master;
+};
+
+zone "f.f.7.2.0.0.a.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.e.f.ip6.arpa"
+{
+  file "db.f.f.7.2.0.0.a.0.0.0.0.0.8.e.f";
+  type master;
+};
+
+Creamos el fichero de resolución directa:
+
+vagrant@dns:/var/cache/bind$ sudo nano db.iesgn.org
+
+$TTL    86400
+@       IN      SOA     fernando.iesgn.org. fernando.tb.95.gmail.com. (
+                              3         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                          86400 )       ; Negative Cache TTL
+
+@       IN      NS      fernando.iesgn.org.
+@       IN      MX 10   correo.iesgn.org.
+
+$ORIGIN iesgn.org.
+fernando IN A 10.0.0.24
+correo IN A 10.0.0.200
+ftp IN A 10.0.0.201
+cliente1 IN A 10.0.0.4
+cliente2 IN A 10.0.0.5
+web IN A 10.0.0.2
+www IN CNAME web
+departamentos IN CNAME web
+
+; IPv6
+
+fernando IN AAAA fe80::a00:27ff:fed9:6fc4
+correo IN AAAA fe80::a00:27ff:feb8:7fc4
+ftp IN AAAA fe80::a00:27ff:fec2:6cc4
+cliente1 IN AAAA fe80::a00:27ff:fed7:4fc4
+cliente2 IN AAAA fe80::a00:27ff:fed3:6fc7
+web IN AAAA fe80::a00:27ff:feb7:6dc5
+
+Creamos el fichero de resolución inversa:
+
+vagrant@dns:/var/cache/bind$ sudo nano db.10.0.0 
+
+$TTL	86400
+@	IN	SOA	fernando.iesgn.org. fernando.tb.95.gmail.com. (
+			      1		; Serial
+			 604800		; Refresh
+			  86400		; Retry
+			2419200		; Expire
+			  86400 )	; Negative Cache TTL
+;
+@	IN	NS	fernando.iesgn.org.
+
+$ORIGIN 0.0.10.in-addr.arpa.
+24 IN PTR fernando.iesgn.org.
+200 IN PTR correo.iesgn.org.
+201 IN PTR ftp.iesgn.org.
+4 IN PTR cliente1.iesgn.org.
+5 IN PTR cliente2.iesgn.org.
+2 IN PTR web.iesgn.org.
+
+Creamos el fichero de resolución inversa de ipv6:
+
+$TTL    86400
+@       IN      SOA     fernando.iesgn.org. fernando.tb.95.gmail.com. (
+                              3         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                          86400 )       ; Negative Cache TTL
+;
+@       IN      NS      fernando.iesgn.org.
+
+$ORIGIN 0.0.0.0.0.0.0.0.0.0.0.0.0.8.e.f.ip6.arpa.
+4.c.f.6.9.d.e.f.f.f.7.2.0.0.a IN PTR fernando.iesgn.org.
+4.c.f.7.8.b.e.f.f.f.7.2.0.0.a IN PTR correo.iesgn.org.
+4.c.c.6.2.c.e.f.f.f.7.2.0.0.a IN PTR ftp.iesgn.org.
+4.c.f.4.7.d.e.f.f.f.7.2.0.0.a IN PTR cliente1.iesgn.org.
+7.c.f.6.3.d.e.f.f.f.7.2.0.0.a IN PTR cliente2.iesgn.org.
+5.c.d.6.7.b.e.f.f.f.7.2.0.0.a IN PTR web.iesgn.org.
+
+Tarea 3
+
+Antes de hacer las consultas debemos modificar el /etc/resolv.conf del cliente, añadiendo la IP local del servidor DNS:
+
+vagrant@dns2:~$ sudo nano /etc/resolv.conf
+
+nameserver 10.0.0.24
+
+Ahora hacemos las consultas pedidas:
+
+- Dirección de fernando.iesgn.org, www.iesgn.org, ftp.iesgn.org
+
+vagrant@dns2:~$ dig fernando.iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> fernando.iesgn.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 39735
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 1, ADDITIONAL: 2
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: 9ca3e60b29cee0fbd3bb6fff5dd572650d416f433fed3003 (good)
+;; QUESTION SECTION:
+;fernando.iesgn.org.		IN	A
+
+;; ANSWER SECTION:
+fernando.iesgn.org.	86400	IN	A	10.0.0.24
+
+;; AUTHORITY SECTION:
+iesgn.org.		86400	IN	NS	fernando.iesgn.org.
+
+;; ADDITIONAL SECTION:
+fernando.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:fed9:6fc4
+
+;; Query time: 0 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Wed Nov 20 17:05:42 GMT 2019
+;; MSG SIZE  rcvd: 133
+
+vagrant@dns2:~$ dig www.iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> www.iesgn.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 31194
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 1, ADDITIONAL: 3
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: c3fda9d59ec7c2b11d8d3c115dd572789df6844c20d39792 (good)
+;; QUESTION SECTION:
+;www.iesgn.org.			IN	A
+
+;; ANSWER SECTION:
+www.iesgn.org.		86400	IN	CNAME	web.iesgn.org.
+web.iesgn.org.		86400	IN	A	10.0.0.2
+
+;; AUTHORITY SECTION:
+iesgn.org.		86400	IN	NS	fernando.iesgn.org.
+
+;; ADDITIONAL SECTION:
+fernando.iesgn.org.	86400	IN	A	10.0.0.24
+fernando.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:fed9:6fc4
+
+;; Query time: 0 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Wed Nov 20 17:06:01 GMT 2019
+;; MSG SIZE  rcvd: 171
+
+vagrant@dns2:~$ dig ftp.iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> ftp.iesgn.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 50235
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 1, ADDITIONAL: 3
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: 35b9210d76cbbe5f2c1f285c5dd57285bf65faa8df10c3ef (good)
+;; QUESTION SECTION:
+;ftp.iesgn.org.			IN	A
+
+;; ANSWER SECTION:
+ftp.iesgn.org.		86400	IN	A	10.0.0.201
+
+;; AUTHORITY SECTION:
+iesgn.org.		86400	IN	NS	fernando.iesgn.org.
+
+;; ADDITIONAL SECTION:
+fernando.iesgn.org.	86400	IN	A	10.0.0.24
+fernando.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:fed9:6fc4
+
+;; Query time: 0 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Wed Nov 20 17:06:14 GMT 2019
+;; MSG SIZE  rcvd: 153
+
+- El servidor DNS con autoridad sobre la zona del dominio iesgn.org
+
+vagrant@dns2:~$ dig ns iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> ns iesgn.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 35570
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 3
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: 867d6df0da3fcbcd8ab988095dd572a47bcf9a5c0d6867e0 (good)
+;; QUESTION SECTION:
+;iesgn.org.			IN	NS
+
+;; ANSWER SECTION:
+iesgn.org.		86400	IN	NS	fernando.iesgn.org.
+
+;; ADDITIONAL SECTION:
+fernando.iesgn.org.	86400	IN	A	10.0.0.24
+fernando.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:fed9:6fc4
+
+;; Query time: 0 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Wed Nov 20 17:06:45 GMT 2019
+;; MSG SIZE  rcvd: 133
+
+- El servidor de correo configurado para iesgn.org
+
+vagrant@dns2:~$ dig mx iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> mx iesgn.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 59358
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 1, ADDITIONAL: 5
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: c07e730a98ae3f17366fb5c75dd572bfe610de5c36b48f90 (good)
+;; QUESTION SECTION:
+;iesgn.org.			IN	MX
+
+;; ANSWER SECTION:
+iesgn.org.		86400	IN	MX	10 correo.iesgn.org.
+
+;; AUTHORITY SECTION:
+iesgn.org.		86400	IN	NS	fernando.iesgn.org.
+
+;; ADDITIONAL SECTION:
+correo.iesgn.org.	86400	IN	A	10.0.0.200
+fernando.iesgn.org.	86400	IN	A	10.0.0.24
+correo.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:feb8:7fc4
+fernando.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:fed9:6fc4
+
+;; Query time: 0 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Wed Nov 20 17:07:12 GMT 2019
+;; MSG SIZE  rcvd: 200
+
+- La dirección IP de www.josedomingo.org
+
+vagrant@dns2:~$ dig www.josedomingo.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> www.josedomingo.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 21960
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 5, ADDITIONAL: 6
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: e8e6bc33596ec475b24af6915dd58310cf5072835e9e8b2e (good)
+;; QUESTION SECTION:
+;www.josedomingo.org.		IN	A
+
+;; ANSWER SECTION:
+www.josedomingo.org.	900	IN	CNAME	playerone.josedomingo.org.
+playerone.josedomingo.org. 900	IN	A	137.74.161.90
+
+;; AUTHORITY SECTION:
+josedomingo.org.	86400	IN	NS	ns2.cdmon.net.
+josedomingo.org.	86400	IN	NS	ns4.cdmondns-01.org.
+josedomingo.org.	86400	IN	NS	ns3.cdmon.net.
+josedomingo.org.	86400	IN	NS	ns5.cdmondns-01.com.
+josedomingo.org.	86400	IN	NS	ns1.cdmon.net.
+
+;; ADDITIONAL SECTION:
+ns1.cdmon.net.		172800	IN	A	35.189.106.232
+ns2.cdmon.net.		172800	IN	A	35.195.57.29
+ns3.cdmon.net.		172800	IN	A	35.157.47.125
+ns4.cdmondns-01.org.	86400	IN	A	52.58.66.183
+ns5.cdmondns-01.com.	172800	IN	A	52.59.146.62
+
+;; Query time: 1307 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Wed Nov 20 18:16:49 GMT 2019
+;; MSG SIZE  rcvd: 322
+
+- Una resolución inversa
+
+vagrant@dns2:~$ dig -x 10.0.0.201
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> -x 10.0.0.201
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 24829
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 1, ADDITIONAL: 3
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: 187ab2cc4a6be44bbbb601d25dd5837db31f6bddfb37b6ff (good)
+;; QUESTION SECTION:
+;201.0.0.10.in-addr.arpa.	IN	PTR
+
+;; ANSWER SECTION:
+201.0.0.10.in-addr.arpa. 86400	IN	PTR	ftp.iesgn.org.
+
+;; AUTHORITY SECTION:
+0.0.10.in-addr.arpa.	86400	IN	NS	fernando.iesgn.org.
+
+;; ADDITIONAL SECTION:
+fernando.iesgn.org.	86400	IN	A	10.0.0.24
+fernando.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:fed9:6fc4
+
+;; Query time: 0 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Wed Nov 20 18:18:37 GMT 2019
+;; MSG SIZE  rcvd: 174
+
+- La dirección ipv6 de fernando.iesgn.org
+
+vagrant@dns2:~$ dig AAAA fernando.iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> AAAA fernando.iesgn.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 8504
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 1, ADDITIONAL: 2
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: 69ce66a5c8b70ecc890b75805dd583bcde89d682323f7f8e (good)
+;; QUESTION SECTION:
+;fernando.iesgn.org.		IN	AAAA
+
+;; ANSWER SECTION:
+fernando.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:fed9:6fc4
+
+;; AUTHORITY SECTION:
+iesgn.org.		86400	IN	NS	fernando.iesgn.org.
+
+;; ADDITIONAL SECTION:
+fernando.iesgn.org.	86400	IN	A	10.0.0.24
+
+;; Query time: 0 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Wed Nov 20 18:19:40 GMT 2019
+;; MSG SIZE  rcvd: 133
+
+Tarea 4
+
+1.
+
+Habilitamos la transferencia de zona:
+
+vagrant@dns:/etc/bind$ sudo nano named.conf.options
+
+allow-transfer { none; };
+
+Modificamos el named.conf.local :
+
+vagrant@dns:/etc/bind$ sudo nano named.conf.local
+
+zone "iesgn.org"
+{
+  file "db.iesgn.org";
+  type master;
+  allow-transfer { 10.0.0.26; };
+  notify yes;
+};
+
+zone "0.0.10.in-addr.arpa"
+{
+  file "db.10.0.0";
+  type master;
+  allow-transfer { 10.0.0.26; };
+  notify yes;
+};
+
+Añadimos las siguientes líneas al fichero de resolución directa:
+
+vagrant@dns:/var/cache/bind$ sudo nano db.iesgn.org
+
+@       IN      NS      fernando-slave.iesgn.org.
+fernando-slave IN A 10.0.0.26
+
+Añadimos las siguientes líneas al fichero de resolución inversa:
+
+vagrant@dns:/var/cache/bind$ sudo nano db.10.0.0
+
+@       IN      NS      fernando-slave.iesgn.org.
+26 IN PTR fernando-slave.iesgn.org.
+
+En el nuevo servidor DNS añadimos las siguientes líneas:
+
+vagrant@afrodita:/etc/bind$ sudo nano named.conf.local
+
+zone "iesgn.org"
+{
+  file "db.iesgn.org";
+  type slave;
+  masters { 10.0.0.24; };
+};
+
+zone "0.0.10.in-addr.arpa"
+{
+  file "db.10.0.0";
+  type slave;
+  masters { 10.0.0.24; };
+};
+
+Ahora cambiamos los números de serie de los archivos de resolución, y estos se volcarán en el dns esclavo.
+
+2.
+
+Comprobamos que las zonas del maestro están configuradas correctamente:
+
+vagrant@dns:~$ sudo named-checkzone iesgn.org /var/cache/bind/db.iesgn.org
+zone iesgn.org/IN: loaded serial 4
+OK
+vagrant@dns:~$ sudo named-checkzone 0.0.10.in-addr.arpa /var/cache/bind/db.10.0.0 
+zone 0.0.10.in-addr.arpa/IN: loaded serial 4
+OK
+
+3.
+
+Comprobamos que el archivo de configuración esta correcto:
+
+vagrant@dns:~$ sudo named-checkconf
+
+4 y 5.
+
+Reiniciamos los servidores, cambiamos el número de serie y comprobamos el log:
+
+vagrant@dns:~$ sudo tail /var/log/syslog
+Nov 20 19:48:05 dns named[459]: zone 0.0.10.in-addr.arpa/IN: sending notifies (serial 4)
+Nov 20 19:48:05 dns named[459]: zone iesgn.org/IN: loaded serial 4
+Nov 20 19:48:05 dns named[459]: zone iesgn.org/IN: sending notifies (serial 4)
+Nov 20 19:48:05 dns named[459]: all zones loaded
+Nov 20 19:48:05 dns named[459]: running
+Nov 20 19:48:05 dns named[459]: managed-keys-zone: Key 20326 for zone . acceptance timer complete: key now trusted
+Nov 20 19:48:28 dns named[459]: client @0x7fc7dc007830 10.0.0.26#54781 (iesgn.org): transfer of 'iesgn.org/IN': AXFR started (serial 4)
+Nov 20 19:48:28 dns named[459]: client @0x7fc7dc007830 10.0.0.26#54781 (iesgn.org): transfer of 'iesgn.org/IN': AXFR ended
+Nov 20 19:48:28 dns named[459]: client @0x7fc7dc00c430 10.0.0.26#44097 (0.0.10.in-addr.arpa): transfer of '0.0.10.in-addr.arpa/IN': AXFR started (serial 4)
+Nov 20 19:48:28 dns named[459]: client @0x7fc7dc00c430 10.0.0.26#44097 (0.0.10.in-addr.arpa): transfer of '0.0.10.in-addr.arpa/IN': AXFR ended
+
+Tarea 5
+
+1.
+
+Configuramos el cliente de la siguiente manera:
+
+vagrant@dns2:~$ sudo nano  /etc/resolv.conf 
+
+nameserver 10.0.0.24
+nameserver 10.0.0.26
+
+2.
+
+Hacemos consultas al maestro y al esclavo:
+
+vagrant@dns2:~$ dig @10.0.0.24 www.iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> @10.0.0.24 www.iesgn.org
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 53350
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 2, ADDITIONAL: 4
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: f0fbb08466743fb662e2911a5dd59e3151edbeed98b81438 (good)
+;; QUESTION SECTION:
+;www.iesgn.org.			IN	A
+
+;; ANSWER SECTION:
+www.iesgn.org.		86400	IN	CNAME	web.iesgn.org.
+web.iesgn.org.		86400	IN	A	10.0.0.2
+
+;; AUTHORITY SECTION:
+iesgn.org.		86400	IN	NS	fernando.iesgn.org.
+iesgn.org.		86400	IN	NS	fernando-slave.iesgn.org.
+
+;; ADDITIONAL SECTION:
+fernando.iesgn.org.	86400	IN	A	10.0.0.24
+fernando-slave.iesgn.org. 86400	IN	A	10.0.0.26
+fernando.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:fed9:6fc4
+
+;; Query time: 0 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Wed Nov 20 20:12:34 GMT 2019
+;; MSG SIZE  rcvd: 216
+
+vagrant@dns2:~$ dig @10.0.0.26 www.iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> @10.0.0.26 www.iesgn.org
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 32163
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 2, ADDITIONAL: 4
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: b2dc2ce678bf2e71897b60ca5dd59e34d2a2b9fc32f95821 (good)
+;; QUESTION SECTION:
+;www.iesgn.org.			IN	A
+
+;; ANSWER SECTION:
+www.iesgn.org.		86400	IN	CNAME	web.iesgn.org.
+web.iesgn.org.		86400	IN	A	10.0.0.2
+
+;; AUTHORITY SECTION:
+iesgn.org.		86400	IN	NS	fernando-slave.iesgn.org.
+iesgn.org.		86400	IN	NS	fernando.iesgn.org.
+
+;; ADDITIONAL SECTION:
+fernando.iesgn.org.	86400	IN	A	10.0.0.24
+fernando-slave.iesgn.org. 86400	IN	A	10.0.0.26
+fernando.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:fed9:6fc4
+
+;; Query time: 0 msec
+;; SERVER: 10.0.0.26#53(10.0.0.26)
+;; WHEN: Wed Nov 20 20:12:37 GMT 2019
+;; MSG SIZE  rcvd: 216
+
+Debemos fijarnos en la "AUTHORITY SECTION", ya que cuando hacemos la consulta al maestro, irá en primer lugar "fernando.iesgn.org"; mientras que en el esclavo será justo al contrario.
+
+3.
+
+La copia desde el cliente no nos devuelve nada:
+
+vagrant@dns2:~$ dig @10.0.0.24 iesgn.org axfr
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> @10.0.0.24 iesgn.org axfr
+; (1 server found)
+;; global options: +cmd
+; Transfer failed.
+
+La copia desde el slave si devolvería toda la información:
+
+vagrant@afrodita:/etc/bind$ dig @10.0.0.24 iesgn.org axfr
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> @10.0.0.24 iesgn.org axfr
+; (1 server found)
+;; global options: +cmd
+iesgn.org.		86400	IN	SOA	fernando.iesgn.org. fernando.tb.95.gmail.com. 4 604800 86400 2419200 86400
+iesgn.org.		86400	IN	NS	fernando.iesgn.org.
+iesgn.org.		86400	IN	NS	fernando-slave.iesgn.org.
+iesgn.org.		86400	IN	MX	10 correo.iesgn.org.
+cliente1.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:fed7:4fc4
+cliente1.iesgn.org.	86400	IN	A	10.0.0.4
+cliente2.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:fed3:6fc7
+cliente2.iesgn.org.	86400	IN	A	10.0.0.5
+correo.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:feb8:7fc4
+correo.iesgn.org.	86400	IN	A	10.0.0.200
+departamentos.iesgn.org. 86400	IN	CNAME	web.iesgn.org.
+fernando.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:fed9:6fc4
+fernando.iesgn.org.	86400	IN	A	10.0.0.24
+fernando-slave.iesgn.org. 86400	IN	A	10.0.0.26
+ftp.iesgn.org.		86400	IN	AAAA	fe80::a00:27ff:fec2:6cc4
+ftp.iesgn.org.		86400	IN	A	10.0.0.201
+web.iesgn.org.		86400	IN	AAAA	fe80::a00:27ff:feb7:6dc5
+web.iesgn.org.		86400	IN	A	10.0.0.2
+www.iesgn.org.		86400	IN	CNAME	web.iesgn.org.
+iesgn.org.		86400	IN	SOA	fernando.iesgn.org. fernando.tb.95.gmail.com. 4 604800 86400 2419200 86400
+;; Query time: 0 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Wed Nov 20 20:21:44 GMT 2019
+;; XFR size: 20 records (messages 1, bytes 589)
+
+Tarea 6
+
+1.
+
+Hacemos una consulta desde el cliente al maestro:
+
+vagrant@dns2:~$ dig departamentos.iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> departamentos.iesgn.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 35385
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 2, ADDITIONAL: 4
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: c655f45fff46b0b266e4ee5b5dd5a4b9b14ad8267d152e87 (good)
+;; QUESTION SECTION:
+;departamentos.iesgn.org.	IN	A
+
+;; ANSWER SECTION:
+departamentos.iesgn.org. 86400	IN	CNAME	web.iesgn.org.
+web.iesgn.org.		86400	IN	A	10.0.0.2
+
+;; AUTHORITY SECTION:
+iesgn.org.		86400	IN	NS	fernando-slave.iesgn.org.
+iesgn.org.		86400	IN	NS	fernando.iesgn.org.
+
+;; ADDITIONAL SECTION:
+fernando.iesgn.org.	86400	IN	A	10.0.0.24
+fernando-slave.iesgn.org. 86400	IN	A	10.0.0.26
+fernando.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:fed9:6fc4
+
+;; Query time: 0 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Wed Nov 20 20:40:26 GMT 2019
+;; MSG SIZE  rcvd: 226
+
+2.
+
+Paramos el maestro:
+
+vagrant@dns:/etc/bind$ sudo systemctl stop bind9
+
+Volvemos a hacer la consulta desde el cliente y vemos que nos funciona:
+
+vagrant@dns2:~$ dig departamentos.iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> departamentos.iesgn.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 25315
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 2, ADDITIONAL: 4
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: 8c22c4eb516d61dcb90185365dd5a5aa8fa9fad15fd98b44 (good)
+;; QUESTION SECTION:
+;departamentos.iesgn.org.	IN	A
+
+;; ANSWER SECTION:
+departamentos.iesgn.org. 86400	IN	CNAME	web.iesgn.org.
+web.iesgn.org.		86400	IN	A	10.0.0.2
+
+;; AUTHORITY SECTION:
+iesgn.org.		86400	IN	NS	fernando-slave.iesgn.org.
+iesgn.org.		86400	IN	NS	fernando.iesgn.org.
+
+;; ADDITIONAL SECTION:
+fernando.iesgn.org.	86400	IN	A	10.0.0.24
+fernando-slave.iesgn.org. 86400	IN	A	10.0.0.26
+fernando.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:fed9:6fc4
+
+;; Query time: 1 msec
+;; SERVER: 10.0.0.26#53(10.0.0.26)
+;; WHEN: Wed Nov 20 20:44:27 GMT 2019
+;; MSG SIZE  rcvd: 226
+
+Comprobamos que nos ha respondido el slave, ya que en el AUTHORITY SECTION sale el slave en primer lugar.
+
+Tarea 7
+
+Creamos el subdominio en la zona de resolución directa del servidor DNS principal:
+
+vagrant@dns:/var/cache/bind$ sudo nano db.iesgn.org
+
+; Subdominio
+
+$ORIGIN informatica.iesgn.org.
+@               IN    NS    fernando-sub
+fernando-sub    IN    A     10.0.0.27
+
+Configuramos la zona en el dns subdominio:
+
+vagrant@subdominio:/etc/bind$ sudo nano named.conf.local
+
+zone "informatica.iesgn.org"
+{
+  type master;
+  file "db.informatica.iesgn.org";
+};
+
+Creamos la zona de resolución directa en el dns subdominio:
+
+vagrant@subdominio:/var/cache/bind$ sudo nano db.informatica.iesgn.org 
+
+$TTL	86400
+@	IN	SOA	fernando-sub.informatica.iesgn.org. fernando.tb.95.gmail.com. (
+			      1		; Serial
+			 604800		; Refresh
+			  86400		; Retry
+			2419200		; Expire
+			  86400 )	; Negative Cache TTL
+;
+@	IN	NS	fernando-sub.informatica.iesgn.org.
+@	IN	MX  10	correo.informatica.iesgn.org.
+
+$ORIGIN informatica.iesgn.org.
+
+fernando-sub   IN    A        10.0.0.27
+web            IN    A        10.0.0.3
+ftp            IN    A        10.0.0.201
+correo         IN    A        10.0.0.202
+www            IN    CNAME    web
+
+Reiniciamos los servicios de ambas máquinas y nos aseguramos que este correctamente indicada la IP en el /etc/resolv.conf del cliente:
+
+vagrant@dns2:~$ cat /etc/resolv.conf
+
+nameserver 10.0.0.24
+
+Tarea 8
+
+1.
+
+Realizamos las siguientes consultas:
+
+vagrant@dns2:~$ dig www.informatica.iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> www.informatica.iesgn.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 52069
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: f4af4efe1aa51e3037bc10615dd6bd834c026118ba0cee4f (good)
+;; QUESTION SECTION:
+;www.informatica.iesgn.org.	IN	A
+
+;; ANSWER SECTION:
+www.informatica.iesgn.org. 85779 IN	CNAME	web.informatica.iesgn.org.
+web.informatica.iesgn.org. 85779 IN	A	10.0.0.3
+
+;; AUTHORITY SECTION:
+informatica.iesgn.org.	86400	IN	NS	fernando-sub.informatica.iesgn.org.
+
+;; Query time: 0 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Thu Nov 21 16:38:27 GMT 2019
+;; MSG SIZE  rcvd: 143
+
+vagrant@dns2:~$ dig ftp.informatica.iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> ftp.informatica.iesgn.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 41651
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: 1467a1547aa46b3342098f575dd6bd8cb9fd7ae020879248 (good)
+;; QUESTION SECTION:
+;ftp.informatica.iesgn.org.	IN	A
+
+;; ANSWER SECTION:
+ftp.informatica.iesgn.org. 86400 IN	A	10.0.0.201
+
+;; AUTHORITY SECTION:
+informatica.iesgn.org.	86400	IN	NS	fernando-sub.informatica.iesgn.org.
+
+;; Query time: 2 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Thu Nov 21 16:38:37 GMT 2019
+;; MSG SIZE  rcvd: 125
+
+2.
+
+Consulta servidor NS:
+
+vagrant@dns2:~$ dig ns informatica.iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> ns informatica.iesgn.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 32390
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: bf86e15bfa29c2ae6c4720ec5dd6be1908b6afa25ccf8bfc (good)
+;; QUESTION SECTION:
+;informatica.iesgn.org.		IN	NS
+
+;; ANSWER SECTION:
+informatica.iesgn.org.	86400	IN	NS	fernando-sub.informatica.iesgn.org.
+
+;; Query time: 2 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Thu Nov 21 16:40:57 GMT 2019
+;; MSG SIZE  rcvd: 105
+
+vagrant@dns2:~$ dig ns iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> ns iesgn.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 63904
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 4
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: ba452df65b99561b6816e8d25dd6cbe5a7e41f69e8d1c73c (good)
+;; QUESTION SECTION:
+;iesgn.org.			IN	NS
+
+;; ANSWER SECTION:
+iesgn.org.		86400	IN	NS	fernando-slave.iesgn.org.
+iesgn.org.		86400	IN	NS	fernando.iesgn.org.
+
+;; ADDITIONAL SECTION:
+fernando.iesgn.org.	86400	IN	A	10.0.0.24
+fernando-slave.iesgn.org. 86400	IN	A	10.0.0.26
+fernando.iesgn.org.	86400	IN	AAAA	fe80::a00:27ff:fed9:6fc4
+
+;; Query time: 1 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Thu Nov 21 18:59:56 GMT 2019
+;; MSG SIZE  rcvd: 178
+
+No, comparando vemos que no indica el mismo servidor DNS.
+
+3.
+
+Consulta servidor de correo:
+
+vagrant@dns2:~$ dig mx informatica.iesgn.org
+
+; <<>> DiG 9.11.5-P4-5.1-Debian <<>> mx informatica.iesgn.org
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 32719
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: 2e63c1e6c33dbdf7528fc13b5dd6c1d1e796fbe616426ea0 (good)
+;; QUESTION SECTION:
+;informatica.iesgn.org.		IN	MX
+
+;; ANSWER SECTION:
+informatica.iesgn.org.	86400	IN	MX	10 correo.informatica.iesgn.org.
+
+;; AUTHORITY SECTION:
+informatica.iesgn.org.	85448	IN	NS	fernando-sub.informatica.iesgn.org.
+
+;; Query time: 2 msec
+;; SERVER: 10.0.0.24#53(10.0.0.24)
+;; WHEN: Thu Nov 21 16:56:49 GMT 2019
+;; MSG SIZE  rcvd: 128
+
+Tarea 9
+
+Para empezar, debemos de instalar el servidor DHCP:
+
+vagrant@dns:~$ sudo apt install isc-dhcp-server
+
+Ahora generamos el fichero de configuración rndc:
+
+vagrant@dns:/etc/bind$ sudo rndc-confgen
+# Start of rndc.conf
+key "rndc-key" {
+	algorithm hmac-md5;
+	secret "S36RuQVNbj0O96WDfY5dMg==";
+};
+
+options {
+	default-key "rndc-key";
+	default-server 127.0.0.1;
+	default-port 953;
+};
+# End of rndc.conf
+
+# Use with the following in named.conf, adjusting the allow list as needed:
+# key "rndc-key" {
+# 	algorithm hmac-md5;
+# 	secret "S36RuQVNbj0O96WDfY5dMg==";
+# };
+# 
+# controls {
+# 	inet 127.0.0.1 port 953
+# 		allow { 127.0.0.1; } keys { "rndc-key"; };
+# };
+# End of named.conf
+
+Lo primero que tenemos que hacer es habilitar la rndc.key añadiendo las siguientes líneas al archivo de configuración:
+
+vagrant@dns:/etc/bind$ sudo nano named.conf.options 
+
+
+
+Tras esto, configuramos las zonas:
+
+vagrant@dns:/etc/bind$ sudo nano named.conf.local 
+
+zone "iesgn.org"
+{
+  file "db.iesgn.org";
+  type master;
+  allow-update { key "rndc-key"; };
+  notify yes;
+};
+
+zone "0.0.10.in-addr.arpa"
+{
+  file "db.10.0.0";
+  type master;
+  allow-update { key "rndc-key"; };
+  notify yes;
+};
+
+Ahora configuramos la zona directa e inversa:
+
+vagrant@dns:/var/cache/bind$ sudo nano db.iesgn.org
+
+
+
+vagrant@dns:/var/cache/bind$ sudo nano db.10.0.0 
+
+
+
+
+Instalamos DHCP y comenzamos a configurarlo:
+
+vagrant@dns:~$ sudo apt install isc-dhcp-server
+
+vagrant@dns:~$ sudo nano /etc/default/isc-dhcp-server
+
+...
+INTERFACESv4="eth2" 
+INTERFACESv6="" 
+...
+
+Por último, añadimos la configuración DDNS:
+
+vagrant@dns:~$ sudo nano /etc/dhcp/dhcpd.conf
+
+
+
+
+
+----
+
+
+
+
+4.c.f.6.9.d.e.f.f.f.7.2.0.0.a.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.e.f.ip6.arpa. IN PTR iesgn.org.
+
+Tarea 3
+
+
+
+----------------
+
+BIND9
+
+
+/etc/bind9/named.conf.local	Indicamos zonas en las que va a tener autoridad el servidor DNS
+
+zone "iesgn.org"		     RESOLUCION DIRECTA 
+{
+  file "db.iesgn.org";
+  type "master";
+};
+
+zone "0.0.10.in-addr.arpa"           RESOLUCION INVERSA
+{
+  file "db.10.0.0";
+  type "master";
+};
+
+
+Creamos el fichero:
+
+/var/cache/bind/db.iesgn.org
+
+Añadimos:
+
+@ IN SOA  dns.iesgn.org.   fernando.tb.95.gmail.com.
+	  serial 1;
+	  (4 tiempos)
+
+@ IN MX 10 correo.iesgn.org.
+@ IN NS   dns.iesgn.org.
+
+$ORIGIN   iesgn.org.
+dns IN A 10.0.0.3
+web IN A 10.0.0.2
+cliente1 IN A 10.0.0.4
+cliente2 IN A 10.0.0.5
+correo IN A 10.0.0.200
+www IN CNAME web
+departamentos IN CNAME web
+ftp IN CNAME web
+
+
+Ahora resolución inversa:
+
+/var/cache/bind/db.10.0.0
+
+@ IN SOA dns.iesgn.org.   fernando.tb.95.gmail.com.
+	 serial 1;
+	 (4 tiempos)
+
+@ IN NS  dns.iesgn.org.
+$ORIGIN  0.0.10.in-addr.arpa.
+3  IN  PTR  dns.iesgn.org.
+2  IN  PTR  web.iesgn.org.
+4  IN  PTR  cliente1.iesgn.org.
+5  IN  PTR  cliente2.iesgn.org.
+200 IN PTR  correo.iesgn.org.
+(Guarda información de la zona)	(Nombre del servidor con autoridad maestro, IMPORTANTE TERMINAR CON PUNTO)
+
+------------------------
+EXTRAS
+
+apt install bind9
+
+cp /etc/bind/db.epmty db.iesgn.org (PLANTILLA)
+
+$TTL (tiempo de vida de la resolución)
+
+rndc reload (lo mismo que systemctl restart bind9)
+rndc flush (borramos la caché y se actualizan las direcciones cambiadas)
+
+dig dns.iesgn.org

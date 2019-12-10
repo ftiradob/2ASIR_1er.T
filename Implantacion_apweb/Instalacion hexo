@@ -1,0 +1,54 @@
+npm install hexo-cli -g
+ 1910  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+ 1911  wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+ 1912  nvm install stable
+ 1913  sudo nvm install stable
+ 1914  su
+ 1915  clear
+ 1916  su
+ 1917  npx hexo
+ 1918  npx hexo init
+ 1919  ls
+ 1920  mkdir hexoweb
+ 1921  cd hexoweb/
+ 1922  npx hexo init
+ 1923  ls
+ 1924  npx hexo help
+ 1925  npx hexo deploy
+ 1926  npx hexo server
+ 1927  npx hexo help
+ 1928  npx hexo config
+ 1929  npx hexo help
+ 1930  npx hexo new
+
+4.
+
+https://github.com/ftiradob/generadorestatico
+
+5.
+
+Instalamos surge:
+
+ftirado@nazo:~/hexoweb$ sudo npm install --global surge
+
+Actualizamos nuestro generador si hemos hecho algún cambio y ponemos en producción nuestra web:
+
+ftirado@nazo:~/hexoweb$ hexo generate
+ftirado@nazo:~/hexoweb$ surge /home/ftirado/hexoweb/public/ ftirado.surge.sh
+
+6.
+
+Para realizar esta tarea vamos a hacer uso de git hooks. Lo único que debemos hacer es lo siguiente:
+
+ftirado@nazo:~/hexoweb/.git/hooks$ nano pre-push.sample
+
+..
+hexo generate
+surge /home/ftirado/hexoweb/public/ ftirado.surge.sh
+
+Y por último, eliminamos el ".sample" del archivo:
+
+ftirado@nazo:~/hexoweb/.git/hooks$ mv pre-push.sample pre-push
+
+Ya tenemos automatizada la generación de la página y su despliegue tras un cambio.
+

@@ -1,0 +1,223 @@
+Tarea 1
+
+Creamos la máquina vagrant:
+
+config.vm.define :nodo1 do |nodo1|
+ nodo1.vm.box = "debian/buster64"
+ nodo1.vm.hostname = "nginx"
+ nodo1.vm.network :public_network,:bridge=>"eno1"
+ nodo1.vm.network :private_network, ip: "192.168.100.1", virtualbox__intnet: "miredinterna"
+ nodo1.vm.provision "shell", run: "always",
+    inline: "sudo apt-get install -y nginx"
+end
+end
+
+Accedemos a la página web por defecto:
+
+!nginx.png!
+
+Tarea 2
+
+Configuramos sitios web:
+
+vagrant@nginx:/etc/nginx/sites-available$ sudo nano iesgn.com 
+
+server {
+	listen 80;
+	listen [::]:80;
+
+	root /srv/www/iesgn;
+
+	index index.html index.htm index.nginx-debian.html;
+
+	server_name www.iesgn.org;
+
+	location / {
+		try_files $uri $uri/ =404;
+	}
+}
+
+
+vagrant@nginx:/etc/nginx/sites-available$ sudo nano departamentos.com 
+
+server {
+	listen 80;
+	listen [::]:80;
+
+	root /srv/www/departamentos;
+	index index.html index.htm index.nginx-debian.html;
+
+	server_name departamentos.iesgn.org;
+
+	location / {
+		try_files $uri $uri/ =404;
+	}
+}
+
+Activamos los sitios web:
+
+vagrant@nginx:/etc/nginx/sites-enabled$ sudo ln -s /etc/nginx/sites-available/iesgn .
+vagrant@nginx:/etc/nginx/sites-enabled$ sudo ln -s /etc/nginx/sites-available/departamentos .
+
+Creamos directorios en /srv/www/ , metemos un index.html en cada uno y le damos permisos:
+
+vagrant@nginx:/etc/nginx/sites-available$ sudo chown -R www-data:www-data /srv/www/iesgn/
+vagrant@nginx:/etc/nginx/sites-available$ sudo chown -R www-data:www-data /srv/www/departamentos/
+
+Pruebas de funcionamiento:
+
+!nginxiesgn.png!
+
+!nginxdepartamentos.png!
+
+Tarea 3
+
+Primero creamos la carpeta principal y añadimos contenido:
+
+vagrant@nginx:~$ sudo touch /srv/www/iesgn/principal/index.html
+
+Modificamos nuestro fichero de configuración:
+
+vagrant@nginx:~$ sudo nano /etc/nginx/sites-available/iesgn.com 
+
+location / {
+                # First attempt to serve request as file, then
+                # as directory, then fall back to displaying a 404.
+                return 301 http://www.iesgn.org/principal;
+                try_files $uri $uri/ =404;
+        }
+
+location /principal {
+                # First attempt to serve request as file, then
+                # as directory, then fall back to displaying a 404.
+                autoindex off;
+                disable_symlinks on;
+        }
+
+Prueba:
+
+!nginxprincipal.png!
+
+Tarea 4
+
+Lo primero que tendremos que hacer es crear contenido en /srv/doc y darle los respectivos permisos:
+
+vagrant@nginx:/srv/doc$ sudo nano nginx.txt 
+vagrant@nginx:/srv/doc$ sudo nano pruebanginx.txt 
+vagrant@nginx:/srv/doc$ sudo chown -R www-data:www-data *
+
+Tras esto, añadimos la siguiente directiva al fichero de configuración:
+
+vagrant@nginx:/etc/nginx/sites-available$ sudo nano iesgn.com
+
+location /principal/documentos {
+	alias /srv/doc;
+	autoindex on;
+	disable_symlinks if_not_owner;
+}
+
+Añadimos un enlace simbólico en /srv/doc de un archivo creado en home:
+
+vagrant@nginx:~$ touch holasoydevagrant.txt
+vagrant@nginx:~$ sudo ln -s /home/vagrant/holasoydevagrant.txt /srv/doc/
+
+Reiniciamos el servicio:
+
+vagrant@nginx:/etc/nginx/sites-available$ sudo systemctl restart nginx
+
+Comprobamos que no nos deja acceder al archivo:
+
+!fallodoc.png!
+
+Mientras que a otro archivo si nos deja:
+
+!buendoc.png!
+
+Tarea 5
+
+Creamos el directorio de error y sus respectivos archivos y añadimos las directrices al virtual host:
+
+vagrant@nginx:/etc/nginx/sites-available$ sudo nano iesgn.com
+
+error_page 404 /error/fallo404.html;
+location  /error/fallo404.html {
+  internal;
+}
+	
+error_page 403 /error/fallo403.html;
+location  /error/fallo403.html {
+  internal;
+}
+
+
+Comprobamos que si introducimos una URL inexistente nos redirige al error 404:
+
+!noencuentranginx.png!
+
+Comprobamos el error 403 utilizando el ejercicio anterior:
+
+!noautorizadonginx.png!
+
+Tarea 6
+
+Configuramos el virtual host de la siguiente manera:
+
+vagrant@nginx:/etc/nginx/sites-available$ sudo nano departamentos.com 
+
+location /internet {
+        try_files $uri $uri/ =404;
+	autoindex on;
+	deny 192.168.100.0/24;
+	allow all;
+}
+
+location /intranet/ {
+        try_files $uri $uri/ =404;
+	autoindex on;
+	allow 192.168.100.0/24;
+	deny all;
+}
+
+
+Probamos en el navegador de mi máquina anfitriona:
+
+!intersv.png!
+
+
+!intrasv.png!
+
+
+Probamos en el cliente con el navegador de terminal "lynx":
+
+!intercl.png!
+
+
+!intracl.png!
+
+Tarea 7
+
+Creamos el directorio y el contenido:
+
+vagrant@nginx:/srv/www/departamentos$ sudo mkdir secreto
+vagrant@nginx:/srv/www/departamentos/secreto$ sudo touch index.html
+vagrant@nginx:/srv/www/departamentos/secreto$ sudo nano index.html
+
+Creamos un directorio con un fichero donde se generará el usuario y su contraseña:
+
+vagrant@nginx:/etc/nginx$ sudo htpasswd -c -m /etc/nginx/.htpasswd verboso
+
+Configuramos el virtual host de la siguiente manera:
+
+location /secreto {
+	try_files $uri $uri/ =404;
+	auth_basic "Secreto_restringido_Fernando";
+	auth_basic_user_file /etc/nginx/.htpasswd;
+}
+
+Probamos:
+
+
+!verbosonginx.png!
+
+
+!secretonginx.png!

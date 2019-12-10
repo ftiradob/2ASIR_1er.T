@@ -1,0 +1,8 @@
+LAMP
+
+1) Descargar y descomprimir los ficheros en /var/www/html
+2) Crear una BD y un usuario en la BD
+3) La 1a vez que accedemos suele comenzar un instalador
+4) Configuración de la app
+5) App crea las tablas
+6) Lee la documentación

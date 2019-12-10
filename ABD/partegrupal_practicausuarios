@@ -1,0 +1,250 @@
+1. (POSTGRES) Crea un usuario llamado Becario y, sin usar los roles de ORACLE, dale los siguientes privilegios:
+
+1.1 - Conectarse a la base de datos.
+
+En PostgreSQL existen 2 maneras de crear un rol de usuario capaz de conectarse. Dos de ellas son:
+
+Mediante comandos dentro de psql:
+
+Creamos un rol de usuario dandole permiso de conexión y le damos una contraseña:
+
+create role becario with login password 'dios';
+
+Tras esto, creamos una base de datos con el mismo nombre que el rol de usuario creado:
+
+create database becario;
+
+Ahora ya podemos conectarnos de la siguiente manera:
+
+postgres@psqlserver:~$ psql -U becario -d becario -h 127.0.0.1
+Password for user becario: 
+psql (11.5 (Debian 11.5-1+deb10u1))
+SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, bits: 256, compression: off)
+Type "help" for help.
+
+becario=>
+
+Mediante comandos de la shell
+
+Creamos el usuario becario en postgresql:
+
+vagrant@psqlserver:~$ sudo -u postgres createuser --interactive
+Enter name of role to add: becario
+Shall the new role be a superuser? (y/n) n
+Shall the new role be allowed to create databases? (y/n) n
+Shall the new role be allowed to create more new roles? (y/n) n
+
+Creamos el usuario becario en el sistema:
+
+vagrant@psqlserver:~$ sudo adduser becario
+
+Creamos una base de datos que usará nuestro usuario:
+
+vagrant@psqlserver:~$ sudo -u postgres createdb becario
+
+Nos conectamos:
+
+vagrant@psqlserver:~$ sudo -i -u becario
+
+becario@psqlserver:~$ psql
+psql (11.5 (Debian 11.5-1+deb10u1))
+Type "help" for help.
+
+becario=>
+
+1.2 - Modificar el número de errores en la introducción de la contraseña de cualquier usuario.
+
+Para modificar esto, debemos de usar un módulo llamado "passwordcheck" que comprueba las contraseñas establecidas con "CREATE ROLE" o "ALTER ROLE". Para activar este módulo, añadimos "$libdir/passwordcheck" a "shared_preload_libraries" en el archivo de configuración "postgresql.conf".
+
+1.3 - Modificar índices en cualquier esquema (este privilegio podrá pasarlo a quien quiera)
+
+En PostgreSQL no existe la posibilidad de modificar el índice de cualquier esquema.
+
+1.4 - Insertar filas en scott.emp (este privilegio podrá pasarlo a quien quiera)
+
+El privilegio sería el siguiente:
+
+scott=# GRANT INSERT ON scott.emp TO becario WITH GRANT OPTION;
+GRANT
+
+1.5 Crear objetos en cualquier tablespace.
+
+En PostgreSQL, este privilegio tendremos que aplicarlo sobre un tablespace concreto, no existe la opción "ANY":
+
+GRANT CREATE ON TABLESPACE <nombretablespace> TO becario;
+
+1.6 Gestión completa de usuarios, privilegios y roles.
+
+La sentencia sería la siguiente:
+
+ALTER ROLE becario WITH CREATEROLE CREATEDB LOGIN WITH GRANT OPTION; 
+
+Con esta sentencia, el usuario becario no tendría gestión completa de todos los privilegios, solamente de los especificados. Si queremos conseguir esto, tendremos que usar la opción "SUPERUSER".
+
+2. (POSTGRES) Escribe una consulta que obtenga un script para quitar el privilegio de borrar registros en alguna tabla de SCOTT a los usuarios que lo tengan.
+
+Para empezar, creamos el rol de usuario "scott":
+
+scott=# create user scott with password 'dios';
+CREATE ROLE
+
+Creamos el esquema "scott":
+
+scott=# create schema authorization scott;
+CREATE SCHEMA
+
+Creamos las tablas e insertamos el contenido:
+
+scott=> create table scott.dept (
+scott(>   deptno integer,
+scott(>   dname  text,
+scott(>   loc    text,
+scott(>   constraint pk_dept primary key (deptno)
+scott(> );
+CREATE TABLE
+scott=> 
+scott=> create table scott.emp (
+scott(>   empno    integer,
+scott(>   ename    text,
+scott(>   job      text,
+scott(>   mgr      integer,
+scott(>   hiredate date,
+scott(>   sal      integer,
+scott(>   comm     integer,
+scott(>   deptno   integer,
+scott(>   constraint pk_emp primary key (empno),
+scott(>   constraint fk_mgr foreign key (mgr) references emp (empno),
+scott(>   constraint fk_deptno foreign key (deptno) references dept (deptno)
+scott(> );
+CREATE TABLE
+
+Comprobamos que se ha creado correctamente:
+
+scott=> \d
+       List of relations
+ Schema | Name | Type  | Owner 
+--------+------+-------+-------
+ scott  | dept | table | scott
+ scott  | emp  | table | scott
+(2 rows)
+
+Realizamos la consulta de la siguiente:
+
+SELECT 'REVOKE DELETE ON ' || table_catalog || '.' || table_name || ' FROM ' || grantee || ';' FROM information_schema.role_table_grants WHERE table_catalog = 'scott' AND privilege_type = 'DELETE' AND table_schema = 'scott';
+
+Da como resultado:
+
+                ?column?                 
+-----------------------------------------
+ REVOKE DELETE ON scott.emp FROM scott;
+ REVOKE DELETE ON scott.dept FROM scott;
+(2 rows)
+
+4. (POSTGRES) Realiza un procedimiento que reciba un nombre de usuario y nos muestre cuántas sesiones tiene abiertas en este momento. Además, para cada una de dichas sesiones nos mostrará la hora de comienzo y el nombre de la máquina, sistema operativo y programa desde el que fue abierta.
+
+El procedimiento principal es el siguiente:
+
+create or replace function INFOSESIONES(p_usuario VARCHAR)
+returns void as $$
+declare
+	v_numsesiones NUMERIC:=0;
+	c_info cursor for
+	select backend_start, client_addr, application_name
+	from pg_stat_activity
+	where usename = p_usuario;
+
+begin
+	select count(usename) into v_numsesiones
+	from pg_stat_activity
+	where usename = p_usuario;
+	Raise Notice '%Nombre usuario: % | Num. sesiones: % %', chr(10),p_usuario,v_numsesiones,chr(10);
+	for i in c_info loop
+		Raise Notice 'Fecha y hora de comienzo: % Programa ejecutor: % Dirección IP ejecutor: %', i.backend_start, i.application_name, i.client_addr;
+	end loop;
+end;
+$$ LANGUAGE plpgsql;
+
+Prueba desde un cliente:
+
+postgres=# select INFOSESIONES('invitado1');
+NOTICE:  
+Nombre usuario: invitado1 | Num. sesiones: 1 
+
+NOTICE:  Fecha y hora de comienzo: 2019-12-04 19:40:00.382891+00 Programa ejecutor: psql Dirección IP ejecutor: 192.168.1.47
+ infosesiones 
+--------------
+ 
+(1 row)
+
+Caso práctico 2
+
+1. ROLLBACK
+
+GRANT DROP ROLLBACK SEGMENT TO Ayudante WITH ADMIN OPTION;
+
+3. (POSTGRES) Realiza un procedimiento que reciba dos nombres de usuario y genere un script que asigne al primero los privilegios de inserción y modificación sobre todas las tablas del segundo, así como el de ejecución de cualquier procedimiento que tenga el segundo usuario.
+
+create or replace function PRIVSINSERCION(p_usuario1 VARCHAR,
+					  p_usuario2 VARCHAR)
+returns void as $$
+declare
+
+	c_info cursor for
+	select distinct table_name, table_schema
+	from information_schema.table_privileges
+	where grantor = p_usuario2;
+
+begin
+	
+	for i in c_info loop
+		Raise Notice 'GRANT INSERT ON %.% TO %', i.table_schema, i.table_name, p_usuario1;
+		Raise Notice 'GRANT UPDATE ON %.% TO %', i.table_schema, i.table_name, p_usuario1;
+	end loop;
+end;
+$$ LANGUAGE plpgsql;
+
+create or replace function PRIVSEJECUCION(p_usuario1 VARCHAR,
+					  p_usuario2 VARCHAR)
+returns void as $$
+declare
+
+	c_info cursor for
+	select p.proname
+	from pg_catalog.pg_namespace n
+	join pg_catalog.pg_proc p
+	on p.pronamespace = n.oid
+	where n.nspowner = (select usesysid
+			    from pg_user
+			    where usename = p_usuario2);
+
+begin
+	for i in c_info loop
+		Raise Notice 'GRANT EXECUTE ON % TO %', i.proname, p_usuario1;
+	end loop;
+end;
+$$ LANGUAGE plpgsql;
+
+create or replace function PRIVS (p_usuario1 VARCHAR,
+				  p_usuario2 VARCHAR)
+returns void as $$
+declare
+begin
+		perform PRIVSINSERCION(p_usuario1, p_usuario2);
+		perform PRIVSEJECUCION(p_usuario1, p_usuario2);
+end;
+$$ language plpgsql;
+
+Probamos por ejemplo con el usuario "scott":
+
+scott=> select PRIVS('invitado1','scott');
+NOTICE:  GRANT INSERT ON scott.dept TO invitado1
+NOTICE:  GRANT UPDATE ON scott.dept TO invitado1
+NOTICE:  GRANT INSERT ON scott.emp TO invitado1
+NOTICE:  GRANT UPDATE ON scott.emp TO invitado1
+NOTICE:  GRANT EXECUTE ON privsejecucion TO invitado1
+NOTICE:  GRANT EXECUTE ON privsinsercion TO invitado1
+NOTICE:  GRANT EXECUTE ON privs TO invitado1
+ privs 
+-------
+ 
+(1 row)

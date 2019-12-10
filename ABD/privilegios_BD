@@ -1,0 +1,20 @@
+
+
+- Sobre objetos
+
+Esquema: Conjunto de objetos de un usuario
+PUBLIC: A todo el mundo
+WITH GRANT OPTION: Esta opcion hace que al darle el permiso, él también pueda dar el permiso que ha recibido
+
+- Del sistema
+
+ANY: Permisos sobre objetos que no son tuyos
+WITH ADMIN OPTION: Esta opcion hace que al darle el permiso, él también pueda dar el permiso que ha recibido
+
+REVOKE: Quitar permisos
+
+ROLES MÁS IMPORTANTES
+
+- Connect: Usuarios normales, crean sesion, tablas, insertan datos, etc
+- Resource: Para los programadores, crea triggers, procedimientos, etc
+- Dba: Rol de administración

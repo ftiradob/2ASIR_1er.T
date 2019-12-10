@@ -1,0 +1,10 @@
+dentro de /var/www/html
+mkdir privado
+cd privado
+touch index.html (Zona privada)
+sites-available/000-default.conf
+
+	AuthUserFile "/etc/apache2/passwd.txt"
+	AuthType Basic
+
+htpasswd -c /etc/apache2/passwd.txt pepe

@@ -1,0 +1,129 @@
+-S ip origen
+--sport puerto origen
+-d ip destino
+--dport puerto destino
+-p protocolo (tcp, udp)
+-j ACCEPT, DROP
+-o interfaz de salida
+-i interfaz de entrada
+
+
+-I: Insertar (prioridad)
+-A: Añadir (lo añade sin prioridad)
+
+INPUT -p tcp --dport 80 -i eth0 -j ACCEPT
+
+OUTPUT -p tcp --sport 80 -o eth0 -j ACCEPT
+
+iptables -L -nv (lista las reglas -n:te lo lista con el numero del puerto)
+sudo iptables -L -nv --line-numbers
+
+Activar sistema DROP de cortafuegos:
+iptables -P INPUT DROP
+iptables -P OUTPUT DROP
+
+Para borrar una regla:
+
+iptables -D INPUT 13
+
+---------------
+
+iptables -F
+iptables -t nat -F
+iptables -Z
+iptables -t nat -Z
+iptables -A INPUT -s 172.22.0.0/16 -p tcp --dport 22 -j ACCEPT
+iptables -A OUTPUT -d 172.22.0.0/16 -p tcp --sport 22 -j ACCEPT
+iptables -A INPUT -s 172.23.0.0/16 -p tcp --dport 22 -j ACCEPT
+iptables -A OUTPUT -d 172.23.0.0/16 -p tcp --sport 22 -j ACCEPT
+iptables -P INPUT DROP
+iptables -P OUTPUT DROP
+iptables -A INPUT -i lo -p icmp -j ACCEPT
+iptables -A OUTPUT -o lo -p icmp -j ACCEPT
+iptables -A INPUT -s 172.22.0.0/16 -p tcp --dport 22 -j ACCEPT
+iptables -A OUTPUT -d 172.22.0.0/16 -p tcp --sport 22 -j ACCEPT
+iptables -A OUTPUT -o eth0 -p icmp -j ACCEPT
+iptables -A INPUT -i eth0 -p icmp -j ACCEPT
+iptables -A OUTPUT -o eth0 -p udp --dport 53 -j ACCEPT
+iptables -A INPUT -i eth0 -p udp --sport 53 -j ACCEPT
+iptables -A OUTPUT -o eth0 -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -i eth0 -p tcp --sport 80 -j ACCEPT
+iptables -A OUTPUT -o eth0 -p tcp --dport 443 -j ACCEPT
+iptables -A INPUT -i eth0 -p tcp --sport 443 -j ACCEPT
+iptables -A OUTPUT -o eth0 -p tcp --sport 80 -j ACCEPT
+iptables -A INPUT -i eth0 -p tcp --dport 80 -j ACCEPT
+
+
+ESCENARIO 1
+
+1.
+
+sudo iptables -A INPUT -p tcp --sport 22 -j ACCEPT
+sudo iptables -A OUTPUT -p tcp --dport 22 -j ACCEPT
+
+2.
+
+sudo iptables -I INPUT -s 172.22.4.53/16 -p tcp --sport 80 -j DROP
+sudo iptables -I OUTPUT -d 172.22.4.53/16 -p tcp --dport 80 -j DROP
+
+sudo iptables -I INPUT -s 172.22.4.53/16 -p tcp --sport 443 -j DROP
+sudo iptables -I OUTPUT -d 172.22.4.53/16 -p tcp --dport 443 -j DROP
+
+3.
+
+Primero eliminamos las reglas DNS anteriores:
+
+iptables -D INPUT 8
+iptables -D OUTPUT 8
+
+Tras esto, establecemos las reglas de entrada y salida:
+
+sudo iptables -A INPUT -s 192.168.202.2 -p udp --sport 53 -j ACCEPT
+sudo iptables -A OUTPUT -d 192.168.202.2 -p udp --dport 53 -j ACCEPT
+
+4.
+
+sudo iptables -I OUTPUT -d 137.74.161.90 -p tcp --dport 80 -j DROP
+sudo iptables -I INPUT -s 137.74.161.90 -p tcp --sport 80 -j DROP
+
+sudo iptables -I OUTPUT -d 137.74.161.90 -p tcp --dport 443 -j DROP
+sudo iptables -I INPUT -s 137.74.161.90 -p tcp --sport 443 -j DROP
+
+5.
+
+sudo iptables -A INPUT -s 192.168.203.3 -p tcp --sport 25 -j ACCEPT
+sudo iptables -A OUTPUT -d 192.168.203.3 -p tcp --dport 25 -j ACCEPT
+
+root@maquina:/home/debian# telnet babuino-smtp.gonzalonazareno.org 25
+Trying 192.168.203.3...
+Connected to babuino-smtp.gonzalonazareno.org.
+Escape character is '^]'.
+220 babuino-smtp.gonzalonazareno.org ESMTP Postfix (Debian/GNU)
+
+6.
+
+Primero creamos el usuario, la base de datos, los permisos de mariadb y configuramos.
+Tras esto, creamos las reglas de cortafuegos:
+
+sudo iptables -A INPUT -p tcp --dport 3306 -s 172.22.200.131 -j ACCEPT
+sudo iptables -A OUTPUT -p tcp --sport 3306 -d 172.22.200.131 -j ACCEPT
+
+Probamos:
+
+debian@croqueta:~$ sudo mysql -u invitado1 -p cortafuegos -h 172.22.200.208
+Enter password: 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 36
+Server version: 10.3.18-MariaDB-0+deb10u1 Debian 10
+
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [cortafuegos]> 
+
+Ahora intentamos entrar desde otro cliente y no nos deja:
+
+ubuntu@tortilla:~$ sudo mysql -u invitado1 -p cortafuegos -h 172.22.200.208
+Enter password: 
+

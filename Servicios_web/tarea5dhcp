@@ -1,0 +1,210 @@
+vagrant@servidor:~$ sudo tcpdump -i eth2 -vvv
+tcpdump: listening on eth2, link-type EN10MB (Ethernet), capture size 262144 bytes
+08:26:45.496393 IP6 (hlim 1, next-header Options (0) payload length: 36) :: > ff02::16: HBH (rtalert: 0x0000) (padn) [icmp6 sum ok] ICMP6, multicast listener report v2, 1 group record(s) [gaddr ff02::1:ff6c:5a77 to_ex { }]
+08:26:45.542115 IP6 (hlim 1, next-header Options (0) payload length: 36) :: > ff02::16: HBH (rtalert: 0x0000) (padn) [icmp6 sum ok] ICMP6, multicast listener report v2, 1 group record(s) [gaddr ff02::1:ff6c:5a77 to_ex { }]
+08:26:45.707531 IP6 (hlim 255, next-header ICMPv6 (58) payload length: 32) :: > ff02::1:ff6c:5a77: [icmp6 sum ok] ICMP6, neighbor solicitation, length 32, who has fe80::a00:27ff:fe6c:5a77
+	  unknown option (14), length 8 (1): 
+	    0x0000:  6d0c f5cc f716
+08:26:46.713079 IP6 (hlim 1, next-header Options (0) payload length: 36) fe80::a00:27ff:fe6c:5a77 > ff02::16: HBH (rtalert: 0x0000) (padn) [icmp6 sum ok] ICMP6, multicast listener report v2, 1 group record(s) [gaddr ff02::1:ff6c:5a77 to_ex { }]
+08:26:46.713109 IP6 (hlim 255, next-header ICMPv6 (58) payload length: 16) fe80::a00:27ff:fe6c:5a77 > ip6-allrouters: [icmp6 sum ok] ICMP6, router solicitation, length 16
+	  source link-address option (1), length 8 (1): 08:00:27:6c:5a:77
+	    0x0000:  0800 276c 5a77
+08:26:47.127755 IP6 (hlim 1, next-header Options (0) payload length: 36) fe80::a00:27ff:fe6c:5a77 > ff02::16: HBH (rtalert: 0x0000) (padn) [icmp6 sum ok] ICMP6, multicast listener report v2, 1 group record(s) [gaddr ff02::1:ff6c:5a77 to_ex { }]
+08:26:48.994807 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 328)
+    0.0.0.0.bootpc > 255.255.255.255.bootps: [udp sum ok] BOOTP/DHCP, Request from 08:00:27:6c:5a:77 (oui Unknown), length 300, xid 0xce659651, secs 6, Flags [none] (0x0000)
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: Discover
+	    Requested-IP Option 50, length 4: 192.168.100.20
+	    Hostname Option 12, length 7: "cliente"
+	    Parameter-Request Option 55, length 13: 
+	      Subnet-Mask, BR, Time-Zone, Default-Gateway
+	      Domain-Name, Domain-Name-Server, Option 119, Hostname
+	      Netbios-Name-Server, Netbios-Scope, MTU, Classless-Static-Route
+	      NTP
+	    Client-ID Option 61, length 19: hardware-type 255, 27:6c:5a:77:00:01:00:01:25:25:c5:27:08:00:27:6c:5a:77
+	    END Option 255, length 0
+	    PAD Option 0, length 0, occurs 5
+08:26:48.995089 IP (tos 0x0, ttl 64, id 21133, offset 0, flags [DF], proto ICMP (1), length 48)
+    192.168.100.1 > 192.168.100.20: ICMP echo request, id 1915, seq 0, length 28
+08:26:50.728909 IP6 (hlim 255, next-header ICMPv6 (58) payload length: 16) fe80::a00:27ff:fe6c:5a77 > ip6-allrouters: [icmp6 sum ok] ICMP6, router solicitation, length 16
+	  source link-address option (1), length 8 (1): 08:00:27:6c:5a:77
+	    0x0000:  0800 276c 5a77
+08:26:54.144063 ARP, Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.100.20 tell 192.168.100.1, length 28
+08:26:55.163971 ARP, Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.100.20 tell 192.168.100.1, length 28
+08:26:56.193952 ARP, Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.100.20 tell 192.168.100.1, length 28
+08:26:59.186302 IP6 (hlim 255, next-header ICMPv6 (58) payload length: 16) fe80::a00:27ff:fe6c:5a77 > ip6-allrouters: [icmp6 sum ok] ICMP6, router solicitation, length 16
+	  source link-address option (1), length 8 (1): 08:00:27:6c:5a:77
+	    0x0000:  0800 276c 5a77
+08:27:03.061067 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 328)
+    0.0.0.0.bootpc > 255.255.255.255.bootps: [udp sum ok] BOOTP/DHCP, Request from 08:00:27:6c:5a:77 (oui Unknown), length 300, xid 0xce659651, secs 20, Flags [none] (0x0000)
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: Discover
+	    Requested-IP Option 50, length 4: 192.168.100.20
+	    Hostname Option 12, length 7: "cliente"
+	    Parameter-Request Option 55, length 13: 
+	      Subnet-Mask, BR, Time-Zone, Default-Gateway
+	      Domain-Name, Domain-Name-Server, Option 119, Hostname
+	      Netbios-Name-Server, Netbios-Scope, MTU, Classless-Static-Route
+	      NTP
+	    Client-ID Option 61, length 19: hardware-type 255, 27:6c:5a:77:00:01:00:01:25:25:c5:27:08:00:27:6c:5a:77
+	    END Option 255, length 0
+	    PAD Option 0, length 0, occurs 5
+08:27:06.052395 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 328)
+    192.168.100.1.bootps > 192.168.100.20.bootpc: [udp sum ok] BOOTP/DHCP, Reply, length 300, xid 0xce659651, secs 6, Flags [none] (0x0000)
+	  Your-IP 192.168.100.20
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: Offer
+	    Server-ID Option 54, length 4: 192.168.100.1
+	    Lease-Time Option 51, length 4: 21600
+	    Subnet-Mask Option 1, length 4: 255.255.255.0
+	    BR Option 28, length 4: 192.168.100.255
+	    Default-Gateway Option 3, length 4: 192.168.100.90
+	    Domain-Name Option 15, length 11: "example.org"
+	    END Option 255, length 0
+	    PAD Option 0, length 0, occurs 13
+08:27:06.052652 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 328)
+    192.168.100.1.bootps > 192.168.100.20.bootpc: [udp sum ok] BOOTP/DHCP, Reply, length 300, xid 0xce659651, secs 20, Flags [none] (0x0000)
+	  Your-IP 192.168.100.20
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: Offer
+	    Server-ID Option 54, length 4: 192.168.100.1
+	    Lease-Time Option 51, length 4: 21600
+	    Subnet-Mask Option 1, length 4: 255.255.255.0
+	    BR Option 28, length 4: 192.168.100.255
+	    Default-Gateway Option 3, length 4: 192.168.100.90
+	    Domain-Name Option 15, length 11: "example.org"
+	    END Option 255, length 0
+	    PAD Option 0, length 0, occurs 13
+08:27:06.053491 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 329)
+    0.0.0.0.bootpc > 255.255.255.255.bootps: [udp sum ok] BOOTP/DHCP, Request from 08:00:27:6c:5a:77 (oui Unknown), length 301, xid 0xce659651, secs 20, Flags [none] (0x0000)
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: Request
+	    Server-ID Option 54, length 4: 192.168.100.1
+	    Requested-IP Option 50, length 4: 192.168.100.20
+	    Hostname Option 12, length 7: "cliente"
+	    Parameter-Request Option 55, length 13: 
+	      Subnet-Mask, BR, Time-Zone, Default-Gateway
+	      Domain-Name, Domain-Name-Server, Option 119, Hostname
+	      Netbios-Name-Server, Netbios-Scope, MTU, Classless-Static-Route
+	      NTP
+	    Client-ID Option 61, length 19: hardware-type 255, 27:6c:5a:77:00:01:00:01:25:25:c5:27:08:00:27:6c:5a:77
+	    END Option 255, length 0
+08:27:06.055679 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 328)
+    192.168.100.1.bootps > 192.168.100.20.bootpc: [udp sum ok] BOOTP/DHCP, Reply, length 300, xid 0xce659651, secs 20, Flags [none] (0x0000)
+	  Your-IP 192.168.100.20
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: ACK
+	    Server-ID Option 54, length 4: 192.168.100.1
+	    Lease-Time Option 51, length 4: 21600
+	    Subnet-Mask Option 1, length 4: 255.255.255.0
+	    BR Option 28, length 4: 192.168.100.255
+	    Default-Gateway Option 3, length 4: 192.168.100.90
+	    Domain-Name Option 15, length 11: "example.org"
+	    END Option 255, length 0
+	    PAD Option 0, length 0, occurs 13
+08:27:15.108002 ARP, Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.100.1 tell 192.168.100.20, length 46
+08:27:15.108072 ARP, Ethernet (len 6), IPv4 (len 4), Reply 192.168.100.1 is-at 08:00:27:bc:3b:d5 (oui Unknown), length 28
+08:27:15.108296 IP (tos 0x0, ttl 64, id 28107, offset 0, flags [DF], proto UDP (17), length 328)
+    192.168.100.20.bootpc > 192.168.100.1.bootps: [udp sum ok] BOOTP/DHCP, Request from 08:00:27:6c:5a:77 (oui Unknown), length 300, xid 0xd73fed7d, Flags [none] (0x0000)
+	  Client-IP 192.168.100.20
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: Release
+	    Server-ID Option 54, length 4: 192.168.100.1
+	    Hostname Option 12, length 7: "cliente"
+	    Client-ID Option 61, length 19: hardware-type 255, 27:6c:5a:77:00:01:00:01:25:25:c5:27:08:00:27:6c:5a:77
+	    END Option 255, length 0
+	    PAD Option 0, length 0, occurs 20
+08:27:18.035530 IP6 (hlim 1, next-header Options (0) payload length: 36) :: > ff02::16: HBH (rtalert: 0x0000) (padn) [icmp6 sum ok] ICMP6, multicast listener report v2, 1 group record(s) [gaddr ff02::1:ff6c:5a77 to_ex { }]
+08:27:20.740545 IP6 (hlim 1, next-header Options (0) payload length: 36) :: > ff02::16: HBH (rtalert: 0x0000) (padn) [icmp6 sum ok] ICMP6, multicast listener report v2, 1 group record(s) [gaddr ff02::1:ff6c:5a77 to_ex { }]
+08:27:20.741094 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 328)
+    0.0.0.0.bootpc > 255.255.255.255.bootps: [udp sum ok] BOOTP/DHCP, Request from 08:00:27:6c:5a:77 (oui Unknown), length 300, xid 0x5a2ee143, secs 6, Flags [none] (0x0000)
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: Discover
+	    Requested-IP Option 50, length 4: 192.168.100.20
+	    Hostname Option 12, length 7: "cliente"
+	    Parameter-Request Option 55, length 13: 
+	      Subnet-Mask, BR, Time-Zone, Default-Gateway
+	      Domain-Name, Domain-Name-Server, Option 119, Hostname
+	      Netbios-Name-Server, Netbios-Scope, MTU, Classless-Static-Route
+	      NTP
+	    Client-ID Option 61, length 19: hardware-type 255, 27:6c:5a:77:00:01:00:01:25:25:c5:27:08:00:27:6c:5a:77
+	    END Option 255, length 0
+	    PAD Option 0, length 0, occurs 5
+08:27:20.741479 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 328)
+    192.168.100.1.bootps > 192.168.100.20.bootpc: [udp sum ok] BOOTP/DHCP, Reply, length 300, xid 0x5a2ee143, secs 6, Flags [none] (0x0000)
+	  Your-IP 192.168.100.20
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: Offer
+	    Server-ID Option 54, length 4: 192.168.100.1
+	    Lease-Time Option 51, length 4: 21600
+	    Subnet-Mask Option 1, length 4: 255.255.255.0
+	    BR Option 28, length 4: 192.168.100.255
+	    Default-Gateway Option 3, length 4: 192.168.100.90
+	    Domain-Name Option 15, length 11: "example.org"
+	    END Option 255, length 0
+	    PAD Option 0, length 0, occurs 13
+08:27:20.742967 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 329)
+    0.0.0.0.bootpc > 255.255.255.255.bootps: [udp sum ok] BOOTP/DHCP, Request from 08:00:27:6c:5a:77 (oui Unknown), length 301, xid 0x5a2ee143, secs 6, Flags [none] (0x0000)
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: Request
+	    Server-ID Option 54, length 4: 192.168.100.1
+	    Requested-IP Option 50, length 4: 192.168.100.20
+	    Hostname Option 12, length 7: "cliente"
+	    Parameter-Request Option 55, length 13: 
+	      Subnet-Mask, BR, Time-Zone, Default-Gateway
+	      Domain-Name, Domain-Name-Server, Option 119, Hostname
+	      Netbios-Name-Server, Netbios-Scope, MTU, Classless-Static-Route
+	      NTP
+	    Client-ID Option 61, length 19: hardware-type 255, 27:6c:5a:77:00:01:00:01:25:25:c5:27:08:00:27:6c:5a:77
+	    END Option 255, length 0
+08:27:20.745033 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 328)
+    192.168.100.1.bootps > 192.168.100.20.bootpc: [udp sum ok] BOOTP/DHCP, Reply, length 300, xid 0x5a2ee143, secs 6, Flags [none] (0x0000)
+	  Your-IP 192.168.100.20
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: ACK
+	    Server-ID Option 54, length 4: 192.168.100.1
+	    Lease-Time Option 51, length 4: 21600
+	    Subnet-Mask Option 1, length 4: 255.255.255.0
+	    BR Option 28, length 4: 192.168.100.255
+	    Default-Gateway Option 3, length 4: 192.168.100.90
+	    Domain-Name Option 15, length 11: "example.org"
+	    END Option 255, length 0
+	    PAD Option 0, length 0, occurs 13
+08:27:20.745127 IP6 (hlim 255, next-header ICMPv6 (58) payload length: 32) :: > ff02::1:ff6c:5a77: [icmp6 sum ok] ICMP6, neighbor solicitation, length 32, who has fe80::a00:27ff:fe6c:5a77
+	  unknown option (14), length 8 (1): 
+	    0x0000:  43be 0651 943f
+08:27:21.751628 IP6 (hlim 1, next-header Options (0) payload length: 36) fe80::a00:27ff:fe6c:5a77 > ff02::16: HBH (rtalert: 0x0000) (padn) [icmp6 sum ok] ICMP6, multicast listener report v2, 1 group record(s) [gaddr ff02::1:ff6c:5a77 to_ex { }]
+08:27:21.751649 IP6 (hlim 255, next-header ICMPv6 (58) payload length: 16) fe80::a00:27ff:fe6c:5a77 > ip6-allrouters: [icmp6 sum ok] ICMP6, router solicitation, length 16
+	  source link-address option (1), length 8 (1): 08:00:27:6c:5a:77
+	    0x0000:  0800 276c 5a77
+08:27:22.295527 IP6 (hlim 1, next-header Options (0) payload length: 36) fe80::a00:27ff:fe6c:5a77 > ff02::16: HBH (rtalert: 0x0000) (padn) [icmp6 sum ok] ICMP6, multicast listener report v2, 1 group record(s) [gaddr ff02::1:ff6c:5a77 to_ex { }]
+08:27:26.517135 IP6 (hlim 255, next-header ICMPv6 (58) payload length: 16) fe80::a00:27ff:fe6c:5a77 > ip6-allrouters: [icmp6 sum ok] ICMP6, router solicitation, length 16
+	  source link-address option (1), length 8 (1): 08:00:27:6c:5a:77
+	    0x0000:  0800 276c 5a77
+^C
+32 packets captured
+32 packets received by filter
+0 packets dropped by kernel
+

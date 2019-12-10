@@ -1,0 +1,15 @@
+/etc/apache2/sites-enabled -> Te indica la ubicación de nuestros htmls en DocumentRoot
+Por defecto estará en /var/www/html
+chown -R www-data:www-data *
+
+Si en el cliente cambias el /etc/hosts, pones la ip y un nombre de pagina (www.asco.com)
+
+#LAMP (Linux Apache MariaDB PHP)
+
+1. instalar php (apt install php7.3)
+2. instalar libreria php de apache2 (libapache2-mod-php)
+3. instalar mariadb y su libreria php (apt install mariadb-server | sudo apt install php7.3-mysql)
+
+
+GRANT ALL PRIVILEGES ON wordpress.* TO 'ftirado'@'localhost' IDENTIFIED BY 'dios' WITH GRANT OPTION;
+flush privileges; (actualizar privilegios)

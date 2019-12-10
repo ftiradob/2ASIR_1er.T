@@ -1,0 +1,31 @@
+En LDAP:
+
+ldapsearch -x -b dc=gonzalonazareno,dc=org -h papion-ldap uid=alberto.molina
+ldapsearch -x cn
+
+ldapmodify -x -D "cn=admin,dc=alberto,dc=gonzalonazareno,dc=org" -W
+dn. cn=afasf,ou=People,dc=fernando...
+changetype: modify
+objectClass: 
+sn: Manso
+gn: Efraín
+
+
+-h: servidor
+
+en /etc/ldap/ldap.conf modificas BASE = dc=fernando,dc=gonzalonazareno,dc=org
+
+Equivalente:
+
+select * from tabla where uid=alberto.molina
+----------------
+
+Instalamos LDAP:
+
+ftirado@nazo:~$ sudo apt install ldap-utils
+ftirado@nazo:~$ sudo apt install slapd
+
+
+
+ftirado@nazo:~/Descargas$ ldapadd -x -D "cn=admin,dc=fernando,dc=gonzalonazareno,dc=org" -W -f personas.ldif
+

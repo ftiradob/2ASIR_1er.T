@@ -1,0 +1,15 @@
+DHCP es un protocolo que nos permite administrar direcciones IP y otros parámetros TCP/IP, además de transmitir información específica del host.
+
+Cuando se inicializa el cliente DHCP (INIT), este envía un mensaje broadcast DHCPDISCOVER (indicando que desconoce sus parámetros IP) y entra en estado SELECTING, donde recibe los mensajes DHCPOFFER provenientes de los servidores DHCP ofreciéndole varias respuestas a su petición de parametros IP. 
+
+Tras esto entramos en la etapa de aceptación de asignación recibida, en la que el cliente enviará un DHCPREQUEST eligiendo uno de los servidores DHCP que le fueron dados a elegir. Al elegir, el servidor nos contestará con un DHCPACK y el cliente podrá controlar la dirección IP para ver si está en uso o no. En caso de que esté repetida, se ignora el DHCPACK y se envia un DHCPDECLINE, lo que implica que el cliente vuelva a estado INIT.
+
+Tras esto, cuando se acepta el DHCPACK se colocan tres valores de temporización y el cliente entra en estado "duración de la concesión" (BOUND).
+
+T1 (0.5 x T3) -> Tiempo de renovación: Cuando este cumple, el cliente se mueve a estado RENEWING y "negocian" entre el cliente y el servidor la renovación de la IP. Si el servidor no quiere renovar, le enviará al cliente un DHCPNACK y el cliente entrará en estado INIT e intentará obtener una nueva dirección. Si el servidor quiere renovar, le enviará al cliente un DHCPACK, se reinician los temporizadores y se moverá a BOUND.
+
+T2 (0.875 x T3) -> Tiempo de reenganche: Cuando este cumple, el cliente enviará un DHCPREQUEST (ocurre cuando el cliente no recibe respuesta del servidor) a la red para contactar con cualquier servidor, y pasará al estado REBINDING. Si un servidor responde con un DHCPACK, el cliente retoma el estado BOUND; si no, el cliente pasa a estado INIT para buscar una nueva IP.
+
+T3 -> Tiempo de concesión: Cuando este cumple, se desconfigurará el cliente, devolviendo su dirección IP. Cuando el usuario se libra de esta IP, el cliente envia un DHCPRELEASE al servidor para cancelar el "alquiler".
+
+El cliente DHCP puede almacenar la dirección IP que tenía asignada antes de ser apagado (REBOOT). Entonces el cliente envía un DHCPREQUEST al servidor para preguntar si la IP que tenía sigue disponible y entra en estado REBOOTING. Si sigue disponible, el servidor responderá con un DHCPACK y pasará a estado BOUND; en caso contrario, el servidor nos mandará un DHCPRELEASE y nos enviará a estado INIT.

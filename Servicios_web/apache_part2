@@ -1,0 +1,67 @@
+REESCRITURA APACHE
+
+Options FollowSymLinks
+RewriteEngine On
+RewriteRule ^operacion.html$ operacion.php
+
+URL AMIGABLE
+
+Options FollowSymLinks
+RewriteEngine On
+RewriteBase /
+RewriteRule ^([a-z]+)/([0-9]+)/([0-9]+)$ operacion.php?op=$1&op1=$2&op2=$3
+
+buscar/^([a-z]+).html busqueda.html/id=$1
+
+
+13.fertirado (dios)
+
+Activamos el módulo "userdir":
+
+vagrant@apache:~$ sudo a2enmod userdir
+Enabling module userdir.
+To activate the new configuration, you need to run:
+  systemctl restart apache2
+vagrant@apache:~$ sudo systemctl restart apache2
+
+Creamos el directorio "public_html" y metemos un "index.html":
+
+vagrant@apache:~$ mkdir public_html
+vagrant@apache:~/public_html$ touch index.html
+
+Comprobamos que efectivamente funciona introduciendo la siguiente URL:
+
+!usuariovagrant.png!
+
+14.
+
+Primero instalamos el módulo de php de apache:
+
+vagrant@apache:~$ sudo apt install libapache2-mod-php
+
+Luego creamos todos los ficheros necesarios:
+
+vagrant@apache:/etc/apache2/sites-available$ sudo nano php.conf
+
+ServerName www.php.org
+ServerAdmin webmaster@localhost
+DocumentRoot /srv/www/php
+
+vagrant@apache:/etc/apache2$ sudo nano apache2.conf
+
+<Directory /srv/www/php/>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+</Directory>
+
+Ahora creamos el .htaccess:
+
+Options FollowSymLinks
+RewriteEngine On
+RewriteBase /
+RewriteRule ^([0-9]+)/([a-zA-Z]+)$ index.php?monto=$1&pais=$2
+
+Y probamos:
+
+!monedas.png!

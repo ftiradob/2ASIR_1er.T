@@ -1,0 +1,102 @@
+FTP
+
+1. Anónimo. Tenemos un sweb y un sftp, queremos que cuando accedamos a www.iesgn.org/Documentos , aparecen una Lista de documentos (como NAS). Cuando accedamos de forma anonima al FTP, accedemos a la misma lista.
+
+En el servidor apache, descomentamos:
+
+...
+<Anonymous /srv/doc>
+  User				ftp
+  Group				nogroup
+  # We want clients to be able to login with "anonymous" as well as "ftp"
+  UserAlias			anonymous ftp
+  # Cosmetic changes, all files belongs to ftp user
+  DirFakeUser	on ftp
+  DirFakeGroup on ftp
+
+  RequireValidShell		off
+
+  # Limit the maximum number of anonymous logins
+  MaxClients			10
+
+  # We want 'welcome.msg' displayed at login, and '.message' displayed
+  # in each newly chdired directory.
+  DisplayLogin			welcome.msg
+  DisplayChdir		.message
+
+  # Limit WRITE everywhere in the anonymous chroot
+  <Directory *>
+    <Limit WRITE>
+      DenyAll
+    </Limit>
+  </Directory>
+
+  # Uncomment this if you're brave.
+  # <Directory incoming>
+  #   # Umask 022 is a good standard umask to prevent new files and dirs
+  #   # (second parm) from being group and world writable.
+  #   Umask				022  022
+  #            <Limit READ WRITE>
+  #            DenyAll
+  #            </Limit>
+  #            <Limit STOR>
+  #            AllowAll
+  #            </Limit>
+  # </Directory>
+
+</Anonymous>
+...
+
+Configuramos el /etc/hosts del cliente y probamos:
+
+vagrant@apache:/etc/proftpd$ ftp www.iesgn.org
+Connected to departamentos.iesgn.org.
+220 ProFTPD Server (Debian) [::ffff:192.168.100.1]
+Name (www.iesgn.org:vagrant): anonymous
+331 Anonymous login ok, send your complete email address as your password
+Password:
+230 Anonymous access granted, restrictions apply
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp> ls
+200 PORT command successful
+150 Opening ASCII mode data connection for file list
+-rw-r--r--   1 ftp      ftp             0 Oct 22 18:30 adios.txt
+-rw-r--r--   1 ftp      ftp             0 Oct 22 18:29 hola.txt
+lrwxrwxrwx   1 ftp      ftp            26 Oct 23 07:30 pruebita.txt -> /home/vagrant/pruebita.txt
+
+
+2. Crear virtualhost en apache y hacer que cada usuario cambie 
+
+Creamos 2 virtualhost nuevos, 2 usuarios nuevos y ponemos de dueño a las carpetas del virtualhost a esos usuarios:
+
+vagrant@fernandotirado:/etc/proftpd$ cat /etc/apache2/sites-available/holita.conf
+
+<VirtualHost *:80>
+
+	ServerName www.hola.org
+
+	ServerAdmin webmaster@localhost
+	DocumentRoot /var/www/hola
+
+	ErrorLog ${APACHE_LOG_DIR}/error.log
+	CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+</VirtualHost>
+
+
+
+vagrant@fernandotirado:/etc/proftpd$ cat proftpd.conf
+
+# Use this to jail all users in their homes 
+DefaultRoot			/var/www/%u
+
+
+Subimos un archivo para probar:
+
+ftp> put hola.txt 
+local: hola.txt remote: hola.txt
+200 PORT command successful
+150 Opening BINARY mode data connection for hola.txt
+226 Transfer complete
+21 bytes sent in 0.00 secs (155.3622 kB/s)

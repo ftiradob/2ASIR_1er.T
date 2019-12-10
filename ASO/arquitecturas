@@ -1,0 +1,175 @@
+IP FLOTANTE MÁQUINA: debian@172.22.200.71
+
+1.
+
+debian@practica-sistemas:~$ sudo dpkg --add-architecture i386
+debian@practica-sistemas:~$ sudo apt update
+Hit:1 http://security-cdn.debian.org buster/updates InRelease
+Hit:2 http://cdn-fastly.deb.debian.org/debian buster InRelease    
+Hit:3 http://cdn-fastly.deb.debian.org/debian buster-updates InRelease
+Hit:4 http://cdn-fastly.deb.debian.org/debian buster-backports InRelease
+Reading package lists... Done
+Building dependency tree       
+Reading state information... Done
+All packages are up to date.
+debian@practica-sistemas:~$ dpkg --print-foreign-architectures
+i386
+
+2.
+
+debian@practica-sistemas:~$ sudo apt install beep:i386
+debian@practica-sistemas:~$ apt policy beep:i386
+beep:i386:
+  Installed: 1.4.3-2
+  Candidate: 1.4.3-2
+  Version table:
+ *** 1.4.3-2 500
+        500 http://deb.debian.org/debian buster/main i386 Packages
+        100 /var/lib/dpkg/status
+
+3.
+
+Añadimos el repositorio de sid a nuestros repositorios:
+
+debian@practica-sistemas:~$ sudo nano /etc/apt/sources.list
+
+deb http://deb.debian.org/debian buster main
+deb-src http://deb.debian.org/debian buster main
+
+deb http://security.debian.org/ buster/updates main
+deb-src http://security.debian.org/ buster/updates main
+deb http://deb.debian.org/debian buster-updates main
+deb-src http://deb.debian.org/debian buster-updates main
+
+deb http://deb.debian.org/debian buster-backports main
+deb-src http://deb.debian.org/debian buster-backports main
+
+#repositorios de sid
+deb http://deb.debian.org/debian sid main
+deb-src http://deb.debian.org/debian sid main
+
+
+debian@practica-sistemas:~$ sudo apt update
+
+4.
+
+Para configurar que solo instale paquetes de buster tenemos que crear un fichero en /etc/apt/apt.conf.d/ (por ejemplo, yo lo he llamado "buster") e insertar la siguiente línea:
+
+debian@practica-sistemas:~$ cd /etc/apt/apt.conf.d/
+debian@practica-sistemas:/etc/apt/apt.conf.d$ sudo touch buster
+debian@practica-sistemas:/etc/apt/apt.conf.d$ sudo nano buster
+
+APT::Default-Release "buster";
+
+
+Ahora realizamos un update y un upgrade, y comprobaremos que efectivamente nos quedamos con la paquetería de buster por defecto.
+
+debian@practica-sistemas:~$ sudo apt update
+debian@practica-sistemas:~$ sudo apt upgrade
+debian@practica-sistemas:~$ lsb_release -a
+No LSB modules are available.
+Distributor ID:	Debian
+Description:	Debian GNU/Linux 10 (buster)
+Release:	10
+Codename:	buster
+
+
+5.
+
+Instalamos un paquete en sid:
+
+debian@practica-sistemas:~$ apt policy zenity-common
+zenity-common:
+  Installed: (none)
+  Candidate: 3.30.0-2
+  Version table:
+     3.32.0-4 500
+        500 http://deb.debian.org/debian sid/main amd64 Packages
+        500 http://deb.debian.org/debian sid/main i386 Packages
+     3.30.0-2 990
+        990 http://deb.debian.org/debian buster/main amd64 Packages
+        990 http://deb.debian.org/debian buster/main i386 Packages
+debian@practica-sistemas:~$ sudo apt install zenity-common/sid
+debian@practica-sistemas:~$ apt policy zenity-common
+zenity-common:
+  Installed: 3.32.0-4
+  Candidate: 3.32.0-4
+  Version table:
+ *** 3.32.0-4 500
+        500 http://deb.debian.org/debian sid/main amd64 Packages
+        500 http://deb.debian.org/debian sid/main i386 Packages
+        100 /var/lib/dpkg/status
+     3.30.0-2 990
+        990 http://deb.debian.org/debian buster/main amd64 Packages
+        990 http://deb.debian.org/debian buster/main i386 Packages
+
+6.
+
+Tenemos que congelar el paquete apt y sus dependencias:
+
+debian@practica-sistemas:~$ sudo apt install apt-rdepends
+debian@practica-sistemas:~$ sudo apt-rdepends apt | egrep -o 'Depends: [a-z][a-z].*' | cut -d ' ' -f 2 | sort | uniq > reten.txt
+root@practica-sistemas:/home/debian# for i in `cat reten.txt`; do `sudo apt-mark hold $i`; done
+root@practica-sistemas:/home/debian# apt-mark hold apt
+apt set on hold.
+
+Paquetes congelados:
+
+root@practica-sistemas:/home/debian# apt-mark showhold
+adduser
+apt
+debconf
+debian-archive-keyring
+dpkg
+gpgv
+libacl1
+libapt-pkg5.0
+libaudit-common
+libaudit1
+libbz2-1.0
+libc6
+libcap-ng0
+libdb5.3
+libffi6
+libgcc1
+libgcrypt20
+libgmp10
+libgnutls30
+libgpg-error0
+libhogweed4
+libidn2-0
+liblz4-1
+liblzma5
+libnettle6
+libp11-kit0
+libpam-modules
+libpam-modules-bin
+libpam0g
+libpcre2-8-0
+libseccomp2
+libselinux1
+libsemanage-common
+libsemanage1
+libsepol1
+libstdc++6
+libsystemd0
+libtasn1-6
+libudev1
+libunistring2
+libzstd1
+passwd
+perl-base
+tar
+zlib1g
+
+Tras esto, tenemos que guardar en ficheros los paquetes pertenecientes a amd64 y a i386 (importante quitarles la terminación :amd64 y :i386):
+
+debian@practica-sistemas:~$ sudo dpkg -l | egrep "amd64" | cut -d ' ' -f 3 > pa64.txt
+debian@practica-sistemas:~$ sudo dpkg -l | egrep "i386" | cut -d ' ' -f 3 > pi386.txt
+debian@practica-sistemas:~$ cat pa64.txt | cut -d ':' -f 1 > pa64final.txt
+debian@practica-sistemas:~$ cat pi386.txt | cut -d ':' -f 1 > pi386final.txt
+
+Ahora procedemos a las instalaciones:
+
+root@practica-sistemas:/home/debian# for i in `cat pa64final.txt`; do `sudo apt -y install $i:i386`; done
+root@practica-sistemas:/home/debian# for i in `cat pi386final.txt`; do `sudo apt -y install $i:amd64`; done

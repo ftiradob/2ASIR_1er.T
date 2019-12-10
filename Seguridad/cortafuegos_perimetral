@@ -1,0 +1,245 @@
+FORWARD - pág. 45
+
+SNAT -> POSTROUTING
+
+Enmascaramiento: Se produce cuando se realiza SNAT y la IP origen del dispositivo es dinámica
+
+DNAT -> PREROUTING
+
+snat postrouting (conectarse fuera)
+dnat prerouting (conectarse desde fuera local)
+
+-----------------------------------
+
+ESCENARIO 2
+
+iptables -F
+iptables -t nat -F
+iptables -Z
+iptables -t nat -Z
+iptables -A INPUT -s 172.22.0.0/16 -p tcp -m tcp --dport 22 -j ACCEPT
+iptables -A OUTPUT -d 172.22.0.0/16 -p tcp -m tcp --sport 22 -j ACCEPT
+iptables -A INPUT -s 172.23.0.0/16 -p tcp -m tcp --dport 22 -j ACCEPT
+iptables -A OUTPUT -d 172.23.0.0/16 -p tcp -m tcp --sport 22 -j ACCEPT
+iptables -P INPUT DROP
+iptables -P OUTPUT DROP
+iptables -P FORWARD DROP
+echo 1 > /proc/sys/net/ipv4/ip_forward
+iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE
+iptables -A OUTPUT -p tcp -o eth1 -d 192.168.100.0/24 --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp -i eth1 -s 192.168.100.0/24 --sport 22 -j ACCEPT
+iptables -A INPUT -i lo -p icmp -j ACCEPT
+iptables -A OUTPUT -o lo -p icmp -j ACCEPT
+iptables -A OUTPUT -o eth0 -p icmp -j ACCEPT
+iptables -A INPUT -i eth0 -p icmp -j ACCEPT
+iptables -A OUTPUT -o eth1 -p icmp -j ACCEPT
+iptables -A INPUT -i eth1 -p icmp -j ACCEPT
+iptables -A FORWARD -o eth0 -i eth1 -s 192.168.100.0/24 -p icmp -j ACCEPT
+iptables -A FORWARD -i eth0 -o eth1 -d 192.168.100.0/24 -p icmp -j ACCEPT
+iptables -A FORWARD -i eth1 -o eth0 -s 192.168.100.0/24 -p udp --dport 53 -j ACCEPT
+iptables -A FORWARD -o eth1 -i eth0 -d 192.168.100.0/24 -p udp --sport 53 -j ACCEPT
+iptables -A FORWARD -i eth1 -o eth0 -s 192.168.100.0/24 -p tcp --dport 80 -j ACCEPT
+iptables -A FORWARD -o eth1 -i eth0 -d 192.168.100.0/24 -p tcp --sport 80 -j ACCEPT
+iptables -A FORWARD -i eth1 -o eth0 -s 192.168.100.0/24 -p tcp --dport 443 -j ACCEPT
+iptables -A FORWARD -o eth1 -i eth0 -d 192.168.100.0/24 -p tcp --sport 443 -j ACCEPT
+iptables -A FORWARD -i eth0 -o eth1 -d 192.168.100.0/24 -p tcp --dport 80 -j ACCEPT
+iptables -A FORWARD -i eth1 -o eth0 -s 192.168.100.0/24 -p tcp --sport 80 -j ACCEPT
+iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to 192.168.200.10
+
+Ver reglas:
+
+sudo iptables -D FORWARD 13
+sudo iptables -L -nv --line-numbers
+iptables -P INPUT ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD ACCEPT
+
+Conectarse a LAN:
+
+ftirado@nazo:~$ ssh -A debian@172.22.200.208
+debian@router-fw:~$ ssh debian@192.168.100.10
+
+1. Permite realizar conexiones ssh desde los equipos de la LAN
+
+iptables -A FORWARD -i eth1 -o eth0 -s 192.168.100.0/24 -p tcp --dport 22 -j ACCEPT
+iptables -A FORWARD -i eth0 -o eth1 -d 192.168.100.0/24 -p tcp --sport 22 -j ACCEPT
+iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -p tcp --dport 22 -j MASQUERADE
+
+Prueba:
+
+debian@lan:~$ ssh ftirado@172.23.0.58
+ftirado@172.23.0.58's password: 
+Linux nazo 4.19.0-6-amd64 #1 SMP Debian 4.19.67-2+deb10u2 (2019-11-11) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Tue Nov 19 12:35:19 2019 from 172.22.200.208
+ftirado@nazo:~$ 
+
+2. Instala un servidor de correos en la máquina de la LAN. Permite el acceso desde el exterior y desde el cortafuego al servidor de correos. Para probarlo puedes ejecutar un telnet al puerto 25 tcp.
+
+iptables -A FORWARD -i eth0 -o eth1 -d 192.168.100.10/24 -p tcp --dport 25 -j ACCEPT
+iptables -A FORWARD -i eth1 -o eth0 -p tcp --sport 25 -j ACCEPT
+iptables -t nat -I PREROUTING -i eth0 -p tcp --dport 25 -j DNAT --to 192.168.100.10
+iptables -A OUTPUT -o eth1 -d 192.168.100.10/24 -p tcp --dport 25 -j ACCEPT
+iptables -A INPUT -i eth1 -p tcp --sport 25 -j ACCEPT
+
+Prueba desde el exterior:
+
+ftirado@nazo:~$ telnet 172.22.201.77 25
+Trying 172.22.201.77...
+Connected to 172.22.201.77.
+Escape character is '^]'.
+220 lan.novalocal ESMTP Postfix (Debian/GNU)
+quit
+221 2.0.0 Bye
+Connection closed by foreign host.
+
+Prueba desde el cortafuegos:
+
+root@router-fw:/home/debian# telnet 192.168.100.10 25
+Trying 192.168.100.10...
+Connected to 192.168.100.10.
+Escape character is '^]'.
+220 lan.novalocal ESMTP Postfix (Debian/GNU)
+quit
+221 2.0.0 Bye
+Connection closed by foreign host.
+
+3. Permite poder hacer conexiones ssh desde exterior a la LAN
+
+iptables -A FORWARD -i eth0 -o eth1 -p tcp --dport 22 -j ACCEPT
+iptables -A FORWARD -i eth1 -o eth0 -p tcp --sport 22 -j ACCEPT
+iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 22 -j DNAT --to 192.168.100.10
+
+Prueba:
+
+ftirado@nazo:~$ ssh debian@172.22.201.77
+The authenticity of host '172.22.201.77 (172.22.201.77)' can't be established.
+ECDSA key fingerprint is SHA256:qO1rAavm2DFQ5uFJcglVNH/b7FjhdIu9MCRpooAQVUc.
+Are you sure you want to continue connecting (yes/no)? yes
+Failed to add the host to the list of known hosts (/home/ftirado/.ssh/known_hosts).
+Linux lan 4.19.0-6-cloud-amd64 #1 SMP Debian 4.19.67-2+deb10u1 (2019-09-20) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Thu Dec  5 17:18:18 2019 from 192.168.100.2
+debian@lan:~$ 
+
+
+4. Modifica la regla anterior, para que al acceder desde el exterior por ssh tengamos que conectar al puerto 2222, aunque el servidor ssh este configurado para acceder por el puerto 22.
+
+iptables -I FORWARD -i eth0 -o eth1 -p tcp --dport 22 -j ACCEPT
+iptables -I FORWARD -i eth1 -o eth0 -p tcp --sport 22 -j ACCEPT
+iptables -t nat -I PREROUTING -i eth0 -p tcp --dport 2222 -j DNAT --to 192.168.100.10:22
+
+Prueba:
+
+ftirado@nazo:~$ ssh debian@172.22.201.77 -p 2222
+The authenticity of host '[172.22.201.77]:2222 ([172.22.201.77]:2222)' can't be established.
+ECDSA key fingerprint is SHA256:qO1rAavm2DFQ5uFJcglVNH/b7FjhdIu9MCRpooAQVUc.
+Are you sure you want to continue connecting (yes/no)? yes
+Failed to add the host to the list of known hosts (/home/ftirado/.ssh/known_hosts).
+Linux lan 4.19.0-6-cloud-amd64 #1 SMP Debian 4.19.67-2+deb10u1 (2019-09-20) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Thu Dec  5 17:30:56 2019 from 172.23.0.58
+debian@lan:~$ 
+
+
+5. Permite hacer consultas DNS sólo al servidor 192.168.202.2. Comprueba que no puedes hacer un dig @1.1.1.1.
+
+iptables -I FORWARD -i eth1 -o eth0 -d 192.168.202.2 -p udp --dport 53 -j ACCEPT
+iptables -I FORWARD -i eth0 -o eth1 -p udp --sport 53 -j ACCEPT
+iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -p udp --dport 53 -j MASQUERADE
+
+Prueba:
+
+dig @1.1.1.1
+
+   ; <<>> DiG 9.11.5-P4-5.1-Debian <<>> @1.1.1.1
+   ; (1 server found)
+   ;; global options: +cmd
+   ;; connection timed out; no servers could be reached
+
+dig @192.168.202.2
+
+   ; <<>> DiG 9.11.5-P4-5.1-Debian <<>> @192.168.202.2
+   ; (1 server found)
+   ;; global options: +cmd
+   ;; Got answer:
+   ;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 24337
+   ;; flags: qr rd ra ad; QUERY: 1, ANSWER: 13, AUTHORITY: 0, ADDITIONAL: 27
+   
+   ;; OPT PSEUDOSECTION:
+   ; EDNS: version: 0, flags:; udp: 4096
+   ; COOKIE: 9faa55396bb13860e8bfcf115ddbb5eb569eb7e5c5e25703 (good)
+   ;; QUESTION SECTION:
+   ;.				IN	NS
+   
+   ;; ANSWER SECTION:
+   .			510654	IN	NS	d.root-servers.net.
+   .			510654	IN	NS	b.root-servers.net.
+   .			510654	IN	NS	l.root-servers.net.
+   .			510654	IN	NS	i.root-servers.net.
+   .			510654	IN	NS	e.root-servers.net.
+   .			510654	IN	NS	a.root-servers.net.
+   .			510654	IN	NS	h.root-servers.net.
+   .			510654	IN	NS	m.root-servers.net.
+   .			510654	IN	NS	k.root-servers.net.
+   .			510654	IN	NS	j.root-servers.net.
+   .			510654	IN	NS	g.root-servers.net.
+   .			510654	IN	NS	f.root-servers.net.
+   .			510654	IN	NS	c.root-servers.net.
+   
+   ;; ADDITIONAL SECTION:
+   a.root-servers.net.	597054	IN	A	198.41.0.4
+   b.root-servers.net.	597054	IN	A	199.9.14.201
+   c.root-servers.net.	597054	IN	A	192.33.4.12
+   d.root-servers.net.	597054	IN	A	199.7.91.13
+   e.root-servers.net.	597054	IN	A	192.203.230.10
+   f.root-servers.net.	597054	IN	A	192.5.5.241
+   g.root-servers.net.	597054	IN	A	192.112.36.4
+   h.root-servers.net.	597054	IN	A	198.97.190.53
+   i.root-servers.net.	597054	IN	A	192.36.148.17
+   j.root-servers.net.	597054	IN	A	192.58.128.30
+   k.root-servers.net.	597054	IN	A	193.0.14.129
+   l.root-servers.net.	597054	IN	A	199.7.83.42
+   m.root-servers.net.	597054	IN	A	202.12.27.33
+   a.root-servers.net.	597054	IN	AAAA	2001:503:ba3e::2:30
+   b.root-servers.net.	597054	IN	AAAA	2001:500:200::b
+   c.root-servers.net.	597054	IN	AAAA	2001:500:2::c
+   d.root-servers.net.	597054	IN	AAAA	2001:500:2d::d
+   e.root-servers.net.	597054	IN	AAAA	2001:500:a8::e
+   f.root-servers.net.	597054	IN	AAAA	2001:500:2f::f
+   g.root-servers.net.	597054	IN	AAAA	2001:500:12::d0d
+   h.root-servers.net.	597054	IN	AAAA	2001:500:1::53
+   i.root-servers.net.	597054	IN	AAAA	2001:7fe::53
+   j.root-servers.net.	597054	IN	AAAA	2001:503:c27::2:30
+   k.root-servers.net.	597054	IN	AAAA	2001:7fd::1
+   l.root-servers.net.	597054	IN	AAAA	2001:500:9f::42
+   m.root-servers.net.	597054	IN	AAAA	2001:dc3::35
+   
+   ;; Query time: 1 msec
+   ;; SERVER: 192.168.202.2#53(192.168.202.2)
+   ;; WHEN: Mon Nov 25 11:07:23 UTC 2019
+   ;; MSG SIZE  rcvd: 839
+
+6. ¿Tendría resolución de nombres y navegación web el cortafuego? ¿Sería necesario? ¿Tendrían que estar esas de reglas de forma constante en el cortafuego?
+
+No tiene resolución de nombre. No es necesario, ya que sería un agujero de seguridad. No hace falta, depende de lo que busque el cliente, abriremos unas u otras.
+
+

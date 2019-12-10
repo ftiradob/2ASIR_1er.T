@@ -1,0 +1,15 @@
+raid5
+
+-Crea los volúmenes físicos a partir de las particiones creadas. Crea el grupo de volúmenes vg-examen
+
+apt-get install lvm2
+Creamos volúmenes físicos:
+pvcreate /dev/sdc2
+pvcreate /dev/sdc3
+Creamos grupo de volúmenes:
+vgcreate vg-examen /dev/sdc2 /dev/sdc3
+
+-Crea un volumen lógico llamado lv-root de 50MB. Crea otro volumen lógico llamado lv-home de 80MB
+
+lvcreate –-size 50M -n lv-root vg-examen
+lvcreate –-size 80M -n lv-home vg-examen

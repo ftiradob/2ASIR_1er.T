@@ -1,0 +1,236 @@
+Ficheros configuración del servidor:
+
+/etc/default/isc-dhcp-server
+
+INTERFACESv4="eth2"
+INTERFACESv6=""
+
+/etc/dhcp/dhcpd.conf
+
+authoritative;
+subnet 192.168.100.0 netmask 255.255.255.0 {
+range 192.168.100.20 192.168.100.90;
+option broadcast-address 192.168.100.255;
+option routers 192.168.100.90;
+}
+
+Lista de concesiones:
+
+/etc/dhcp/dhcpd.conf
+
+default-lease-time 21600;
+max-lease-time 43200;
+
+La configuración para que el cliente tome automáticamente la configuración, es añadir en vagrant la siguientes línea:
+
+cliente.vm.network :private_network, type: "dhcp"
+
+"ip a" en cliente:
+
+vagrant@cliente:~$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 08:00:27:8d:c0:4d brd ff:ff:ff:ff:ff:ff
+    inet 10.0.2.15/24 brd 10.0.2.255 scope global dynamic eth0
+       valid_lft 84740sec preferred_lft 84740sec
+    inet6 fe80::a00:27ff:fe8d:c04d/64 scope link 
+       valid_lft forever preferred_lft forever
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 08:00:27:6c:5a:77 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.100.20/24 brd 192.168.100.255 scope global dynamic eth1
+       valid_lft 341sec preferred_lft 341sec
+    inet6 fe80::a00:27ff:fe6c:5a77/64 scope link 
+       valid_lft forever preferred_lft forever
+
+*Tarea 4*
+
+He añadido en el servidor la siguiente línea para que nuestro cliente pueda conectarse a internet:
+
+<pre>
+sudo iptables -t nat -A POSTROUTING -o eth1 -s 192.168.100.0/24 -j MASQUERADE
+</pre>
+
+Prueba:
+
+<pre>
+vagrant@cliente:~$ ip r
+default via 192.168.100.1 dev eth1 
+10.0.2.0/24 dev eth0 proto kernel scope link src 10.0.2.15 
+192.168.100.0/24 dev eth1 proto kernel scope link src 192.168.100.20 
+vagrant@cliente:~$ ping 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=51 time=50.3 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=51 time=437 ms
+^C
+--- 8.8.8.8 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 3ms
+rtt min/avg/max/mdev = 50.268/243.471/436.675/193.204 ms
+</pre>
+
+*Tarea 5*
+
+Aquí podemos observar como cuando el cliente solicita una dirección IP con DISCOVER, después el servidor le ofrece una IP al cliente con OFFER, tras esto el cliente acepta la IP ofrecida por el servidor con REQUEST, y para finalizar el servidor le confirma la asignación con ACK.
+
+vagrant@servidor:~$ sudo tcpdump -vi eth2
+tcpdump: listening on eth2, link-type EN10MB (Ethernet), capture size 262144 bytes
+07:37:18.464864 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 328)
+    0.0.0.0.bootpc > 255.255.255.255.bootps: BOOTP/DHCP, Request from 08:00:27:6c:5a:77 (oui Unknown), length 300, xid 0x45057f11, secs 6, Flags [none]
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: Discover
+	    Requested-IP Option 50, length 4: 192.168.100.20
+	    Hostname Option 12, length 7: "cliente"
+	    Parameter-Request Option 55, length 13: 
+	      Subnet-Mask, BR, Time-Zone, Default-Gateway
+	      Domain-Name, Domain-Name-Server, Option 119, Hostname
+	      Netbios-Name-Server, Netbios-Scope, MTU, Classless-Static-Route
+	      NTP
+	    Client-ID Option 61, length 19: hardware-type 255, 27:6c:5a:77:00:01:00:01:25:25:c5:27:08:00:27:6c:5a:77
+07:37:18.465136 IP (tos 0x0, ttl 64, id 14317, offset 0, flags [DF], proto ICMP (1), length 48)
+    192.168.100.1 > 192.168.100.20: ICMP echo request, id 41306, seq 0, length 28
+07:37:20.311143 IP6 (hlim 255, next-header ICMPv6 (58) payload length: 16) fe80::a00:27ff:fe6c:5a77 > ip6-allrouters: [icmp6 sum ok] ICMP6, router solicitation, length 16
+	  source link-address option (1), length 8 (1): 08:00:27:6c:5a:77
+07:37:23.513281 ARP, Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.100.20 tell 192.168.100.1, length 28
+07:37:24.642803 ARP, Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.100.20 tell 192.168.100.1, length 28
+07:37:25.932963 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 328)
+    0.0.0.0.bootpc > 255.255.255.255.bootps: BOOTP/DHCP, Request from 08:00:27:6c:5a:77 (oui Unknown), length 300, xid 0x45057f11, secs 13, Flags [none]
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: Discover
+	    Requested-IP Option 50, length 4: 192.168.100.20
+	    Hostname Option 12, length 7: "cliente"
+	    Parameter-Request Option 55, length 13: 
+	      Subnet-Mask, BR, Time-Zone, Default-Gateway
+	      Domain-Name, Domain-Name-Server, Option 119, Hostname
+	      Netbios-Name-Server, Netbios-Scope, MTU, Classless-Static-Route
+	      NTP
+	    Client-ID Option 61, length 19: hardware-type 255, 27:6c:5a:77:00:01:00:01:25:25:c5:27:08:00:27:6c:5a:77
+07:37:26.444172 ARP, Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.100.20 tell 192.168.100.1, length 28
+07:37:28.244883 IP6 (hlim 255, next-header ICMPv6 (58) payload length: 16) fe80::a00:27ff:fe6c:5a77 > ip6-allrouters: [icmp6 sum ok] ICMP6, router solicitation, length 16
+	  source link-address option (1), length 8 (1): 08:00:27:6c:5a:77
+07:37:38.840939 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 328)
+    192.168.100.1.bootps > 192.168.100.20.bootpc: BOOTP/DHCP, Reply, length 300, xid 0x45057f11, secs 6, Flags [none]
+	  Your-IP 192.168.100.20
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: Offer
+	    Server-ID Option 54, length 4: 192.168.100.1
+	    Lease-Time Option 51, length 4: 21600
+	    Subnet-Mask Option 1, length 4: 255.255.255.0
+	    BR Option 28, length 4: 192.168.100.255
+	    Default-Gateway Option 3, length 4: 192.168.100.90
+	    Domain-Name Option 15, length 11: "example.org"
+07:37:38.841402 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 328)
+    192.168.100.1.bootps > 192.168.100.20.bootpc: BOOTP/DHCP, Reply, length 300, xid 0x45057f11, secs 13, Flags [none]
+	  Your-IP 192.168.100.20
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: Offer
+	    Server-ID Option 54, length 4: 192.168.100.1
+	    Lease-Time Option 51, length 4: 21600
+	    Subnet-Mask Option 1, length 4: 255.255.255.0
+	    BR Option 28, length 4: 192.168.100.255
+	    Default-Gateway Option 3, length 4: 192.168.100.90
+	    Domain-Name Option 15, length 11: "example.org"
+07:37:38.841679 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 329)
+    0.0.0.0.bootpc > 255.255.255.255.bootps: BOOTP/DHCP, Request from 08:00:27:6c:5a:77 (oui Unknown), length 301, xid 0x45057f11, secs 13, Flags [none]
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: Request
+	    Server-ID Option 54, length 4: 192.168.100.1
+	    Requested-IP Option 50, length 4: 192.168.100.20
+	    Hostname Option 12, length 7: "cliente"
+	    Parameter-Request Option 55, length 13: 
+	      Subnet-Mask, BR, Time-Zone, Default-Gateway
+	      Domain-Name, Domain-Name-Server, Option 119, Hostname
+	      Netbios-Name-Server, Netbios-Scope, MTU, Classless-Static-Route
+	      NTP
+	    Client-ID Option 61, length 19: hardware-type 255, 27:6c:5a:77:00:01:00:01:25:25:c5:27:08:00:27:6c:5a:77
+07:37:38.844483 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 328)
+    192.168.100.1.bootps > 192.168.100.20.bootpc: BOOTP/DHCP, Reply, length 300, xid 0x45057f11, secs 13, Flags [none]
+	  Your-IP 192.168.100.20
+	  Client-Ethernet-Address 08:00:27:6c:5a:77 (oui Unknown)
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message Option 53, length 1: ACK
+	    Server-ID Option 54, length 4: 192.168.100.1
+	    Lease-Time Option 51, length 4: 21600
+	    Subnet-Mask Option 1, length 4: 255.255.255.0
+	    BR Option 28, length 4: 192.168.100.255
+	    Default-Gateway Option 3, length 4: 192.168.100.90
+	    Domain-Name Option 15, length 11: "example.org"
+
+TAREA 8
+
+Primero vemos la mac del cliente:
+
+vagrant@cliente:~$ cat /sys/class/net/eth1/address 
+08:00:27:6c:5a:77
+
+Para hacer esto, tenemos que modificar en el servidor el fichero /etc/dhcp/dhcpd.conf ; en el que tendremos que añadir el nombre del host:
+
+host cliente {
+  hardware ethernet 08:00:27:6c:5a:77;
+  fixed-address 192.168.100.100;
+}
+
+vagrant@cliente:~$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 08:00:27:8d:c0:4d brd ff:ff:ff:ff:ff:ff
+    inet 10.0.2.15/24 brd 10.0.2.255 scope global dynamic eth0
+       valid_lft 86358sec preferred_lft 86358sec
+    inet6 fe80::a00:27ff:fe8d:c04d/64 scope link 
+       valid_lft forever preferred_lft forever
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 08:00:27:6c:5a:77 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.100.100/24 brd 192.168.100.255 scope global dynamic eth1
+       valid_lft 21587sec preferred_lft 21587sec
+    inet6 fe80::a00:27ff:fe6c:5a77/64 scope link 
+       valid_lft forever preferred_lft forever
+
+TAREA 10
+
+INTERFACESv4="eth2 eth3"
+INTERFACESv6=""
+
+
+option domain-name "example.org";
+option domain-name-servers ns1.example.org, ns2.example.org;
+
+default-lease-time 43200;
+max-lease-time 86400;
+
+ddns-update-style none;
+
+authoritative;
+subnet 192.168.100.0 netmask 255.255.255.0 {
+range 192.168.100.20 192.168.100.90;
+option broadcast-address 192.168.100.255;
+option routers 192.168.100.90;
+}
+
+subnet 192.168.200.0 netmask 255.255.255.0 {
+range 192.168.200.20 192.168.200.90;
+option broadcast-address 192.168.200.255;
+option routers 192.168.200.90;
+}
+
+
+
+

@@ -1,0 +1,49 @@
+#! /bin/sh
+
+#Hacer un script que metas el nombre de un repositorio y te diga los paquetes instalados de ese repositorio
+
+while :
+do
+	echo "Este es el listado de repositorios de su equipo."
+	echo ""
+	#Muestra el listado de repositorios que tenemos en nuestro equipo
+	listado=$(apt-cache policy | egrep '500' | cut -d ' ' -f3 | uniq)
+	apt-cache policy | egrep '500' | cut -d ' ' -f3 | uniq
+	echo ""
+	read -p "Elija un repositorio (Introduzca 0 para salir): " repositorio
+
+	if [[ $repositorio = 0 ]]
+	then
+		clear
+		echo "Pase un buen día."
+		break
+	#Si el repositorio que hemos introducido esta en el listado de nuestro equipo
+	elif [[ "$listado" =~ $repositorio ]]
+	then
+		clear
+		echo ""
+		echo "Los siguientes paquetes son del repositorio introducido: "
+		echo "CARGANDO.."
+		echo ""
+		#Esta variable nos muestra, a través de un filtro, los paquetes que tenemos instalados en nuestro equipo
+		pktins=$(dpkg -l | grep '^ii' | cut -d ' ' -f3)
+		for i in $pktins
+		do
+			#Esta variable nos muestra, a través de un filtro, el/los repositorios que ha usado un paquete para la instalación
+			repopkt=$(apt-cache policy $i | sed -n /*/,/100/p | grep 'http' | awk '{print $2}')
+			for y in $repopkt
+			do
+				#Si el repositorio que hemos introducido coincide con el de alguno de nuestros paquetes instalados, el nombre de este 					paquete se nos mostrara por pantalla
+				if [[ $repositorio = $y ]]
+				then
+					echo $i
+				fi
+			done
+		done
+	else
+		clear
+		echo ""
+		echo "Error al introducir el repositorio."
+		echo ""
+	fi
+done

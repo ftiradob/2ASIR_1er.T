@@ -1,0 +1,477 @@
+1.
+
+Creamos una máquina con apache instalado:
+
+
+Vagrant.configure("2") do |config|
+  # The most common configuration options are documented and commented below.
+  # For a complete reference, please see the online documentation at
+  # https://docs.vagrantup.com.
+
+  # Every Vagrant development environment requires a box. You can search for
+  # boxes at https://vagrantcloud.com/search.
+ config.vm.box = "debian/buster64"
+ config.vm.hostname = "apache"
+ config.vm.network :public_network,:bridge=>"wlo1"
+ config.vm.provision "shell", run: "always",
+    inline: "sudo apt-get install -y apache2"
+
+end
+
+Ahora modificamos el index.html que se encuentra en /var/www/html:
+
+2.
+
+Creamos los ficheros de configuración de cada uno:
+
+vagrant@apache:/etc/apache2/sites-available$ sudo cp 000-default.conf iesgn.conf
+vagrant@apache:/etc/apache2/sites-available$ sudo cp 000-default.conf departamentos.conf
+
+Configuración iesgn.conf:
+
+ServerName www.iesgn.org
+ServerAdmin webmaster@localhost
+DocumentRoot /srv/www/iesgn
+
+Configuración departamentos.conf:
+
+ServerName departamentos.iesgn.org
+ServerAdmin webmaster@localhost
+DocumentRoot /srv/www/departamentos
+
+Activar sitios web:
+
+vagrant@apache:/etc/apache2/sites-available$ sudo a2ensite iesgn.conf 
+Enabling site iesgn.
+To activate the new configuration, you need to run:
+  systemctl reload apache2
+vagrant@apache:/etc/apache2/sites-available$ sudo a2ensite departamentos.conf 
+Enabling site departamentos.
+To activate the new configuration, you need to run:
+  systemctl reload apache2
+vagrant@apache:/etc/apache2/sites-available$ sudo systemctl reload apache2
+
+Crear directorios en /srv/www/ , meter un index.html y darle permisos con:
+
+vagrant@apache: sudo chown -R www-data:www-data /srv/www/departamentos
+vagrant@apache: sudo chown -R www-data:www-data /srv/www/iesgn
+
+Añadimos estas líneas al archivo de configuración de apache:
+
+vagrant@apache:/etc/apache2$ sudo nano apache2.conf
+
+<Directory /srv/>
+        Options Indexes FollowSymLinks
+        AllowOverride None
+        Require all granted
+</Directory>
+
+Cambiar el fichero /etc/hosts en tu máquina real, introduciendo la ip de la maquina virtual:
+
+127.0.0.1       localhost
+127.0.1.1       raid    raid
+172.22.8.73	www.iesgn.org	departamentos.iesgn.org
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+3.
+
+vagrant@apache:/etc/apache2/sites-available$ sudo nano iesgn.conf
+
+RedirectMatch 301 ^/$ http://www.iesgn.org/principal
+
+Reiniciamos el servicio:
+
+vagrant@apache:/etc/apache2/sites-available$ sudo systemctl reload apache2
+
+Prueba:
+
+(principal)
+
+4.
+
+vagrant@apache:/etc/apache2/sites-available$ sudo nano iesgn.conf 
+Alias "/principal/documentos" "/srv/doc"
+
+vagrant@apache:/etc/apache2/sites-available$ sudo systemctl reload apache2
+
+(apachesrvdoc)
+
+5.
+
+Primero creamos un html de error:
+vagrant@apache:/srv/www/iesgn$ sudo nano fallito.html
+
+Ahora lo configuramos en el ".conf":
+
+vagrant@apache:/etc/apache2/sites-available$ sudo nano iesgn.conf
+ErrorDocument 404 http://www.iesgn.org/fallito.html
+
+Reiniciamos el servidor:
+
+vagrant@apache:/etc/apache2/sites-available$ sudo systemctl reload apache2
+
+Prueba:
+(fallitoapache)
+
+6.
+
+Configuramos de la siguiente manera:
+
+vagrant@apache:/etc/apache2/sites-available$ sudo nano departamentos.conf
+
+<Directory "/srv/www/departamentos/internet">
+                        <RequireAll>
+                        Require all granted
+                        Require not ip 192.168.100
+                        </RequireAll>
+                </Directory>
+                <Directory "/srv/www/departamentos/intranet">
+                        Require ip 192.168.100
+                </Directory>
+
+vagrant@apache:/etc/apache2/sites-available$ sudo systemctl reload apache2
+
+Prueba desde mi máquina:
+
+(mimaquina1)
+
+(mimaquina2)
+
+Prueba desde segunda máquina vagrant:
+
+(segunda1)
+
+(segunda2)
+
+7.
+
+Primero creamos el directorio "secreto" en la carpeta departamentos y añadimos un archivo html:
+
+vagrant@apache:/srv/www/departamentos$ sudo mkdir secreto
+vagrant@apache:/srv/www/departamentos/secreto$ sudo touch index.html
+vagrant@apache:/srv/www/departamentos/secreto$ sudo nano index.html
+
+Creamos un directorio "claves" en /etc/apache2:
+
+vagrant@apache:/etc/apache2$ sudo mkdir claves
+
+Ahora creamos un usuario con su respectiva contraseña:
+
+vagrant@apache:/etc/apache2$ sudo htpasswd -c /etc/apache2/claves/passwd.txt ftirado
+New password: 
+Re-type new password: 
+Adding password for user ftirado
+
+Editamos el siguiente fichero:
+
+vagrant@apache:/etc/apache2/sites-available$ sudo nano departamentos.conf
+
+<Directory "/srv/www/departamentos/secreto">
+                AuthUserFile "/etc/apache2/claves/passwd.txt"
+                AuthName "Palabra de paso"
+                AuthType Basic
+                Require valid-user
+        </Directory>
+
+Hacemos un tcpdump:
+
+vagrant@apache:~$ sudo tcpdump -vi eth1
+
+20:54:36.621987 IP (tos 0x0, ttl 64, id 29021, offset 0, flags [DF], proto TCP (6), length 52)
+    192.168.1.62.http > 192.168.1.41.37740: Flags [.], cksum 0x83de (incorrect -> 0xdaf8), ack 361, win 470, options [nop,nop,TS val 3574957220 ecr 2305287537], length 0
+20:54:36.622926 IP (tos 0x0, ttl 64, id 29022, offset 0, flags [DF], proto TCP (6), length 791)
+    192.168.1.62.http > 192.168.1.41.37740: Flags [P.], cksum 0x86c1 (incorrect -> 0x7c72), seq 1:740, ack 361, win 470, options [nop,nop,TS val 3574957221 ecr 2305287537], length 739: HTTP, length: 739
+	HTTP/1.1 401 Unauthorized
+	Date: Tue, 22 Oct 2019 20:54:36 GMT
+	Server: Apache/2.4.38 (Debian)
+	WWW-Authenticate: Basic realm="Palabra de paso"
+	Content-Length: 470
+	Keep-Alive: timeout=5, max=100
+	Connection: Keep-Alive
+	Content-Type: text/html; charset=iso-8859-1
+	
+	<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+	<html><head>
+	<title>401 Unauthorized</title>
+	</head><body>
+	<h1>Unauthorized</h1>
+	<p>This server could not verify that you
+	are authorized to access the document
+	requested.  Either you supplied the wrong
+	credentials (e.g., bad password), or your
+	browser doesn't understand how to supply
+	the credentials required.</p>
+	<hr>
+	<address>Apache/2.4.38 (Debian) Server at departamentos.iesgn.org Port 80</address>
+	</body></html>
+20:54:36.623564 IP (tos 0x0, ttl 64, id 16166, offset 0, flags [DF], proto TCP (6), length 52)
+    192.168.1.41.37740 > 192.168.1.62.http: Flags [.], cksum 0xd8ee (correct), ack 740, win 251, options [nop,nop,TS val 2305287538 ecr 3574957221], length 0
+20:54:41.783711 ARP, Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.1.41 tell 192.168.1.62, length 28
+20:54:41.784212 ARP, Ethernet (len 6), IPv4 (len 4), Reply 192.168.1.41 is-at 80:2b:f9:c6:a0:8d (oui Unknown), length 46
+20:54:41.784416 ARP, Ethernet (len 6), IPv4 (len 4), Request who-has 192.168.1.62 tell 192.168.1.41, length 46
+20:54:41.784429 ARP, Ethernet (len 6), IPv4 (len 4), Reply 192.168.1.62 is-at 08:00:27:22:0e:06 (oui Unknown), length 28
+20:54:41.996724 IP (tos 0x0, ttl 64, id 16167, offset 0, flags [DF], proto TCP (6), length 52)
+    192.168.1.41.37740 > 192.168.1.62.http: Flags [F.], cksum 0xc3e9 (correct), seq 361, ack 740, win 251, options [nop,nop,TS val 2305292918 ecr 3574957221], length 0
+20:54:41.996963 IP (tos 0x0, ttl 64, id 29023, offset 0, flags [DF], proto TCP (6), length 52)
+    192.168.1.62.http > 192.168.1.41.37740: Flags [F.], cksum 0x83de (incorrect -> 0xae09), seq 740, ack 362, win 470, options [nop,nop,TS val 3574962601 ecr 2305292918], length 0
+20:54:41.997101 IP (tos 0x0, ttl 64, id 16168, offset 0, flags [DF], proto TCP (6), length 52)
+    192.168.1.41.37740 > 192.168.1.62.http: Flags [.], cksum 0xaee4 (correct), ack 741, win 251, options [nop,nop,TS val 2305292918 ecr 3574962601], length 0
+20:54:42.041582 IP (tos 0x0, ttl 64, id 54855, offset 0, flags [DF], proto TCP (6), length 60)
+    192.168.1.41.37742 > 192.168.1.62.http: Flags [S], cksum 0xbb65 (correct), seq 2592138375, win 29200, options [mss 1460,sackOK,TS val 2305292963 ecr 0,nop,wscale 7], length 0
+20:54:42.041662 IP (tos 0x0, ttl 64, id 0, offset 0, flags [DF], proto TCP (6), length 60)
+    192.168.1.62.http > 192.168.1.41.37742: Flags [S.], cksum 0x83e6 (incorrect -> 0xf61b), seq 887562838, ack 2592138376, win 28960, options [mss 1460,sackOK,TS val 3574962646 ecr 2305292963,nop,wscale 6], length 0
+20:54:42.041774 IP (tos 0x0, ttl 64, id 54856, offset 0, flags [DF], proto TCP (6), length 52)
+    192.168.1.41.37742 > 192.168.1.62.http: Flags [.], cksum 0x9522 (correct), ack 1, win 229, options [nop,nop,TS val 2305292963 ecr 3574962646], length 0
+20:54:42.041932 IP (tos 0x0, ttl 64, id 54857, offset 0, flags [DF], proto TCP (6), length 451)
+    192.168.1.41.37742 > 192.168.1.62.http: Flags [P.], cksum 0x6218 (correct), seq 1:400, ack 1, win 229, options [nop,nop,TS val 2305292963 ecr 3574962646], length 399: HTTP, length: 399
+	GET /secreto/ HTTP/1.1
+	Host: departamentos.iesgn.org
+	User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0
+	Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+	Accept-Language: es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3
+	Accept-Encoding: gzip, deflate
+	DNT: 1
+	Connection: keep-alive
+	Upgrade-Insecure-Requests: 1
+	Authorization: Basic ZnRpcmFkbzpkaW9z
+	
+20:54:42.041978 IP (tos 0x0, ttl 64, id 5845, offset 0, flags [DF], proto TCP (6), length 52)
+    192.168.1.62.http > 192.168.1.41.37742: Flags [.], cksum 0x83de (incorrect -> 0x92a2), ack 400, win 470, options [nop,nop,TS val 3574962646 ecr 2305292963], length 0
+20:54:42.043159 IP (tos 0x0, ttl 64, id 5846, offset 0, flags [DF], proto TCP (6), length 341)
+    192.168.1.62.http > 192.168.1.41.37742: Flags [P.], cksum 0x84ff (incorrect -> 0xd5a3), seq 1:290, ack 400, win 470, options [nop,nop,TS val 3574962648 ecr 2305292963], length 289: HTTP, length: 289
+	HTTP/1.1 200 OK
+	Date: Tue, 22 Oct 2019 20:54:42 GMT
+	Server: Apache/2.4.38 (Debian)
+	Last-Modified: Tue, 22 Oct 2019 20:15:39 GMT
+	ETag: "8-5958576cdbb48"
+	Accept-Ranges: bytes
+	Content-Length: 8
+	Keep-Alive: timeout=5, max=100
+	Connection: Keep-Alive
+	Content-Type: text/html
+	
+	SECRETO
+20:54:42.043313 IP (tos 0x0, ttl 64, id 54858, offset 0, flags [DF], proto TCP (6), length 52)
+    192.168.1.41.37742 > 192.168.1.62.http: Flags [.], cksum 0x9266 (correct), ack 290, win 237, options [nop,nop,TS val 2305292965 ecr 3574962648], length 0
+20:54:45.006166 IP6 (hlim 255, next-header ICMPv6 (58) payload length: 24) fe80::dafb:5eff:fe64:8c7f > ip6-allnodes: [icmp6 sum ok] ICMP6, router advertisement, length 24
+	hop limit 64, Flags [other stateful], pref low, router lifetime 0s, reachable time 0ms, retrans timer 0ms
+	  source link-address option (1), length 8 (1): d8:fb:5e:64:8c:7f
+20:54:47.646375 IP (tos 0x0, ttl 64, id 54859, offset 0, flags [DF], proto TCP (6), length 52)
+    192.168.1.41.37742 > 192.168.1.62.http: Flags [F.], cksum 0x7edc (correct), seq 400, ack 290, win 237, options [nop,nop,TS val 2305297966 ecr 3574962648], length 0
+20:54:47.646598 IP (tos 0x0, ttl 64, id 5847, offset 0, flags [DF], proto TCP (6), length 52)
+    192.168.1.62.http > 192.168.1.41.37742: Flags [F.], cksum 0x83de (incorrect -> 0x6a69), seq 290, ack 401, win 470, options [nop,nop,TS val 3574967649 ecr 2305297966], length 0
+20:54:47.646726 IP (tos 0x0, ttl 64, id 54860, offset 0, flags [DF], proto TCP (6), length 52)
+    192.168.1.41.37742 > 192.168.1.62.http: Flags [.], cksum 0x6b52 (correct), ack 291, win 237, options [nop,nop,TS val 2305297966 ecr 3574967649], length 0
+
+8.
+
+Autorizamos el protocolo:
+
+vagrant@apache:~$ sudo a2enmod auth_digest
+Considering dependency authn_core for auth_digest:
+Module authn_core already enabled
+Enabling module auth_digest.
+To activate the new configuration, you need to run:
+  systemctl restart apache2
+
+vagrant@apache:~$ sudo systemctl restart apache2
+
+Creamos las directrices:
+
+<Directory "/srv/www/departamentos/secreto">
+		AuthUserFile "/etc/apache2/claves/password.txt"
+		AuthName "Contra"
+		AuthType Digest
+		Require valid-user
+	</Directory>
+
+Creamos el usuario con su contraseña:
+
+vagrant@apache:/etc/apache2/claves$ sudo htdigest -c /etc/apache2/claves/password.txt Contra fertirado
+Adding password for fertirado in realm Contra.
+New password: 
+Re-type new password:
+
+(digest.png)
+
+Hacemos el tcpdump.
+
+Secciones destacadas:
+
+ - Nos indica que no estamos autorizados
+ - Vemos cuando nos pide usuario y contraseña con su respectivo "hash"
+ - Vemos como nos deja acceder
+
+vagrant@apache:~$ sudo tcpdump -vi eth1
+
+192.168.1.41.36746 > 192.168.1.62.http: Flags [S], cksum 0xc9a0 (correct), seq 3517968709, win 29200, options [mss 1460,sackOK,TS val 2467930797 ecr 0,nop,wscale 7], length 0
+20:24:51.548184 IP (tos 0x0, ttl 64, id 0, offset 0, flags [DF], proto TCP (6), length 60)
+    192.168.1.62.http > 192.168.1.41.36746: Flags [S.], cksum 0x83e6 (incorrect -> 0x4134), seq 1002501925, ack 3517968710, win 28960, options [mss 1460,sackOK,TS val 691285298 ecr 2467930797,nop,wscale 6], length 0
+20:24:51.548935 IP (tos 0x0, ttl 64, id 8350, offset 0, flags [DF], proto TCP (6), length 52)
+    192.168.1.41.36746 > 192.168.1.62.http: Flags [.], cksum 0xe03a (correct), ack 1, win 229, options [nop,nop,TS val 2467930797 ecr 691285298], length 0
+20:24:51.548952 IP (tos 0x0, ttl 64, id 8351, offset 0, flags [DF], proto TCP (6), length 474)
+    192.168.1.41.36746 > 192.168.1.62.http: Flags [P.], cksum 0x50b1 (correct), seq 1:423, ack 1, win 229, options [nop,nop,TS val 2467930798 ecr 691285298], length 422: HTTP, length: 422
+	GET /secreto HTTP/1.1
+	Host: departamentos.iesgn.org
+	Connection: keep-alive
+	Upgrade-Insecure-Requests: 1
+	User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36
+	Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3
+	Accept-Encoding: gzip, deflate
+	Accept-Language: en-US,en;q=0.9
+	
+20:24:51.548987 IP (tos 0x0, ttl 64, id 5687, offset 0, flags [DF], proto TCP (6), length 52)
+    192.168.1.62.http > 192.168.1.41.36746: Flags [.], cksum 0x83de (incorrect -> 0xdda2), ack 423, win 470, options [nop,nop,TS val 691285298 ecr 2467930798], length 0
+20:24:51.549443 IP (tos 0x0, ttl 64, id 5688, offset 0, flags [DF], proto TCP (6), length 872)
+    192.168.1.62.http > 192.168.1.41.36746: Flags [P.], cksum 0x8712 (incorrect -> 0x6c9e), seq 1:821, ack 423, win 470, options [nop,nop,TS val 691285299 ecr 2467930798], length 820: HTTP, length: 820
+	HTTP/1.1 401 Unauthorized	<-----------------------------
+	Date: Thu, 24 Oct 2019 20:24:51 GMT
+	Server: Apache/2.4.38 (Debian)
+	WWW-Authenticate: Digest realm="Contra", nonce="Omxd062VBQA=40e982c50fd20548f1290a542a2a26941a6cce75", algorithm=MD5, qop="auth"
+	Content-Length: 470
+	Keep-Alive: timeout=5, max=100
+	Connection: Keep-Alive
+	Content-Type: text/html; charset=iso-8859-1
+	
+	<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+	<html><head>
+	<title>401 Unauthorized</title>
+	</head><body>
+	<h1>Unauthorized</h1>
+	<p>This server could not verify that you
+	are authorized to access the document
+	requested.  Either you supplied the wrong
+	credentials (e.g., bad password), or your
+	browser doesn't understand how to supply
+	the credentials required.</p>
+	<hr>
+	<address>Apache/2.4.38 (Debian) Server at departamentos.iesgn.org Port 80</address>
+	</body></html>
+20:24:51.549611 IP (tos 0x0, ttl 64, id 8352, offset 0, flags [DF], proto TCP (6), length 52)
+    192.168.1.41.36746 > 192.168.1.62.http: Flags [.], cksum 0xdb47 (correct), ack 821, win 251, options [nop,nop,TS val 2467930799 ecr 691285299], length 0
+20:24:53.315559 IP (tos 0x0, ttl 1, id 0, offset 0, flags [DF], proto IGMP (2), length 32, options (RA))
+    192.168.1.1 > all-systems.mcast.net: igmp query v2 [max resp time 10]
+20:24:53.316618 IP6 (hlim 1, next-header Options (0) payload length: 36) fe80::dafb:5eff:fe64:8c7f > ip6-allnodes: HBH (padn)(rtalert: 0x0000)  [icmp6 sum ok] ICMP6, multicast listener query v2 [max resp delay=0] [gaddr :: robustness=2 qqi=125]
+20:24:53.324792 IP6 (hlim 1, next-header Options (0) payload length: 56) fe80::822b:f9ff:fec6:a08d > ff02::16: HBH (rtalert: 0x0000) (padn) [icmp6 sum ok] ICMP6, multicast listener report v2, 2 group record(s) [gaddr ff02::fb is_ex, 0 source(s)] [gaddr ff02::1:ffc6:a08d is_ex, 0 source(s)]
+20:24:53.332925 IP6 (hlim 1, next-header Options (0) payload length: 36) fe80::a00:27ff:fe22:e06 > ff02::16: HBH (rtalert: 0x0000) (padn) [icmp6 sum ok] ICMP6, multicast listener report v2, 1 group record(s) [gaddr ff02::1:ff22:e06 is_ex, 0 source(s)]
+20:24:53.667672 IP6 (hlim 1, next-header Options (0) payload length: 36) fe80::8e57:9bff:fed8:b72a > ff02::16: HBH (rtalert: 0x0000) (padn) [icmp6 sum ok] ICMP6, multicast listener report v2, 1 group record(s) [gaddr ff02::1:ffd8:b72a is_ex, 0 source(s)]
+20:24:53.816795 IP (tos 0xc0, ttl 1, id 0, offset 0, flags [DF], proto IGMP (2), length 32, options (RA))
+    192.168.1.41 > 224.0.0.251: igmp v2 report 224.0.0.251
+20:24:55.543801 IP (tos 0x0, ttl 64, id 8353, offset 0, flags [DF], proto TCP (6), length 722)
+    192.168.1.41.36746 > 192.168.1.62.http: Flags [P.], cksum 0x4898 (correct), seq 423:1093, ack 821, win 251, options [nop,nop,TS val 2467934793 ecr 691285299], length 670: HTTP, length: 670
+	GET /secreto HTTP/1.1
+	Host: departamentos.iesgn.org
+	Connection: keep-alive
+	Authorization: Digest username="fertirado", realm="Contra",	<-------------------- nonce="Omxd062VBQA=40e982c50fd20548f1290a542a2a26941a6cce75", uri="/secreto", algorithm=MD5, response="385906a9bfdca74b95a13b111a4cd771", qop=auth, nc=00000001, cnonce="afe6c613109a9941"
+	Upgrade-Insecure-Requests: 1
+	User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36
+	Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3
+	Accept-Encoding: gzip, deflate
+	Accept-Language: en-US,en;q=0.9
+	
+20:24:55.544323 IP (tos 0x0, ttl 64, id 5689, offset 0, flags [DF], proto TCP (6), length 663)
+    192.168.1.62.http > 192.168.1.41.36746: Flags [P.], cksum 0x8641 (incorrect -> 0x0dce), seq 821:1432, ack 1093, win 491, options [nop,nop,TS val 691289294 ecr 2467934793], length 611: HTTP, length: 611
+	HTTP/1.1 301 Moved Permanently
+	Date: Thu, 24 Oct 2019 20:24:55 GMT
+	Server: Apache/2.4.38 (Debian)
+	Location: http://departamentos.iesgn.org/secreto/
+	Content-Length: 336
+	Keep-Alive: timeout=5, max=99
+	Connection: Keep-Alive
+	Content-Type: text/html; charset=iso-8859-1
+	
+	<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+	<html><head>
+	<title>301 Moved Permanently</title>
+	</head><body>
+	<h1>Moved Permanently</h1>
+	<p>The document has moved <a href="http://departamentos.iesgn.org/secreto/">here</a>.</p>
+	<hr>
+	<address>Apache/2.4.38 (Debian) Server at departamentos.iesgn.org Port 80</address>
+	</body></html>
+20:24:55.544562 IP (tos 0x0, ttl 64, id 8354, offset 0, flags [DF], proto TCP (6), length 52)
+    192.168.1.41.36746 > 192.168.1.62.http: Flags [.], cksum 0xb704 (correct), ack 1432, win 264, options [nop,nop,TS val 2467934793 ecr 691289294], length 0
+20:24:55.547549 IP (tos 0x0, ttl 64, id 8355, offset 0, flags [DF], proto TCP (6), length 724)
+    192.168.1.41.36746 > 192.168.1.62.http: Flags [P.], cksum 0x02ce (correct), seq 1093:1765, ack 1432, win 264, options [nop,nop,TS val 2467934796 ecr 691289294], length 672: HTTP, length: 672
+	GET /secreto/ HTTP/1.1
+	Host: departamentos.iesgn.org
+	Connection: keep-alive
+	Authorization: Digest username="fertirado", realm="Contra", nonce="Omxd062VBQA=40e982c50fd20548f1290a542a2a26941a6cce75", uri="/secreto/", algorithm=MD5, response="9f20286b2a22ef9f38cfaacf1edbcfef", qop=auth, nc=00000002, cnonce="e485bbe70bd8b6c4"
+	Upgrade-Insecure-Requests: 1
+	User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36
+	Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3
+	Accept-Encoding: gzip, deflate
+	Accept-Language: en-US,en;q=0.9
+	
+20:24:55.548044 IP (tos 0x0, ttl 64, id 5690, offset 0, flags [DF], proto TCP (6), length 455)
+    192.168.1.62.http > 192.168.1.41.36746: Flags [P.], cksum 0x8571 (incorrect -> 0x977e), seq 1432:1835, ack 1765, win 512, options [nop,nop,TS val 691289297 ecr 2467934796], length 403: HTTP, length: 403
+	HTTP/1.1 200 OK			<----------------------------------
+	Date: Thu, 24 Oct 2019 20:24:55 GMT
+	Server: Apache/2.4.38 (Debian)
+	Authentication-Info: rspauth="e6d18202b5699c70a06c6bc6c42edf3e", cnonce="e485bbe70bd8b6c4", nc=00000002, qop=auth
+	Last-Modified: Tue, 22 Oct 2019 20:15:39 GMT
+	ETag: "8-5958576cdbb48"
+	Accept-Ranges: bytes
+	Content-Length: 8
+	Keep-Alive: timeout=5, max=98
+	Connection: Keep-Alive
+	Content-Type: text/html
+	
+	SECRETO
+
+
+9.
+
+vagrant@apache:/etc/apache2/sites-available$ sudo nano departamentos.conf
+
+<Directory "/srv/www/departamentos/secreto">
+                AuthUserFile "/etc/apache2/claves/password.txt"
+                AuthName "Contra"
+                AuthType Digest
+                Require valid-user
+                <RequireAll>
+                        Require all granted
+                        Require ip 192.168.100
+                </RequireAll>
+        </Directory>
+
+vagrant@apache:/etc/apache2/sites-available$ sudo systemctl restart apache2
+
+En máquina con IP privada asociada, vemos que no nos pide contraseña:
+
+vagrant@apache:~$ lynx departamentos.iesgn.org/secreto
+
+!lynx.png!
+
+En máquina anfitrión, vemos que nos sigue pidiendo contraseña:
+
+!vemos.png!
+
+10.
+
+Accedemos a nuestro host, creamos el fichero ".htacces" y añadimos la siguiente opción:
+
+(htacceslistado.png)
+
+
+
+11.
+
+Añadimos lo siguiente a nuestro fichero ".htacces":
+
+RedirectMatch permanent /google http://www.google.es
+
+Se vería como al poner "https://apacheftirado.000webhostapp.com/google" nos redireccionaría a google.
+
+12.
+
+Para hacer esto usamos la herramienta del host y le añadimos usuario y contraseña, que nos generará automáticamente un ".htaccess" y un ".htpasswd" para la carpeta "prohibido":
+
+(herramientahtacces.png)
+
+Prueba:
+
+(contrahtacces.png)

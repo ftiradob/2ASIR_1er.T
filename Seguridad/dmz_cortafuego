@@ -1,0 +1,76 @@
+ESCENARIO DMZ
+
+iptables -F
+iptables -t nat -F
+iptables -Z
+iptables -t nat -Z
+iptables -A INPUT -s 172.22.0.0/16 -p tcp -m tcp --dport 22 -j ACCEPT
+iptables -A OUTPUT -d 172.22.0.0/16 -p tcp -m tcp --sport 22 -j ACCEPT
+iptables -A INPUT -s 172.23.0.0/16 -p tcp -m tcp --dport 22 -j ACCEPT
+iptables -A OUTPUT -d 172.23.0.0/16 -p tcp -m tcp --sport 22 -j ACCEPT
+iptables -P INPUT DROP
+iptables -P OUTPUT DROP
+iptables -P FORWARD DROP
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
+
+Conexión del router a lan y dmz:
+
+iptables -A OUTPUT -p tcp -o eth1 -d 192.168.100.0/24 --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp -i eth1 -s 192.168.100.0/24 --sport 22 -j ACCEPT
+iptables -A OUTPUT -p tcp -o eth2 -d 192.168.200.0/24 --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp -i eth2 -s 192.168.200.0/24 --sport 22 -j ACCEPT
+
+------------------------------------------------
+
+1.
+
+Antes de indicar la política DROP, configuramos el ssh:
+
+iptables -A INPUT -s 172.22.0.0/16 -p tcp -m tcp --dport 22 -j ACCEPT
+iptables -A OUTPUT -d 172.22.0.0/16 -p tcp -m tcp --sport 22 -j ACCEPT
+iptables -A INPUT -s 172.23.0.0/16 -p tcp -m tcp --dport 22 -j ACCEPT
+iptables -A OUTPUT -d 172.23.0.0/16 -p tcp -m tcp --sport 22 -j ACCEPT
+
+Configuramos la política correctamente:
+
+iptables -P INPUT DROP
+iptables -P OUTPUT DROP
+iptables -P FORWARD DROP
+
+2.
+
+Conexión del router a lan y dmz:
+
+iptables -A OUTPUT -p tcp -o eth1 -d 192.168.100.0/24 --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp -i eth1 -s 192.168.100.0/24 --sport 22 -j ACCEPT
+iptables -A OUTPUT -p tcp -o eth2 -d 192.168.200.0/24 --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp -i eth2 -s 192.168.200.0/24 --sport 22 -j ACCEPT
+
+
+iptables -A FORWARD -i eth1 -o eth0 -s 192.168.100.0/24 -p tcp --dport 22 -m state --state NEW,ESTABLISHED
+iptables -A FORWARD -i eth0 -o eth1 -d 192.168.100.0/24 -p tcp --sport 22 -m state --state ESTABLISHED
+iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o eth0 -p tcp --dport 22 -j MASQUERADE
+
+3.
+
+iptables-save
+
+4.
+
+
+
+5.
+
+
+
+6.
+
+
+
+7.
+
+
+
+8.
+

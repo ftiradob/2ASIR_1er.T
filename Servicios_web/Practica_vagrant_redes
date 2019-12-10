@@ -1,0 +1,43 @@
+1er ejercicio
+sudo sysctl -w net.ipv4.ip_forward=1 (en maquina router)
+sudo ip r del default
+sudo ip r add default via 172.22.0.1 (ip publica clase)(en maquina router)
+sudo ip r del default
+sudo ip r add default via 10.1.1.101 (ip privada de maquina router)(en maquina anfitriona)
+sudo iptables -t nat -A POSTROUTING -o eth1 -s 10.1.1.101/24 -j MASQUERADE
+
+2do ejercicio
+nodo2
+sudo apt-get install apache2
+nodo1
+sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -i eth1 -j DNAT --to-destination 10.1.1.102
+
+EN ARCHIVO VAGRANTFILE
+
+config.vm.define :nodo1 do |nodo1|
+  nodo1.vm.box = "debian/buster64"
+  nodo1.vm.hostname = "nodo1"
+  nodo1.vm.network :public_network,:bridge=>"wlo1"
+  nodo1.vm.network :private_network, ip: "10.1.1.101"
+  nodo1.vm.provision "shell",run:"always" ,inline: <<-SHELL
+     sudo apt-get update
+     sudo sysctl -w net.ipv4.ip_forward=1
+     sudo ip r del default
+     sudo ip r add default via 172.22.0.1
+     sudo iptables -t nat -A POSTROUTING -o eth1 -s 10.1.1.101/24 -j MASQUERADE
+     SHELL
+
+ end
+
+config.vm.define :nodo2 do |nodo2|
+  nodo2.vm.box = "debian/buster64"
+  nodo2.vm.hostname = "nodo2"
+  nodo2.vm.network :private_network, ip: "10.1.1.102"
+  nodo2.vm.provision "shell",run:"always" ,inline: <<-SHELL
+     sudo apt-get install -y apache2
+     sudo apt-get update
+     sudo ip r del default
+     sudo ip r add default via 10.1.1.101
+     SHELL
+ end
+

@@ -1,0 +1,66 @@
+TRADICIONAL CMS PHP
+
+Tarea 1
+
+Opción elegida: Dos servicios de hosting distintos
+
+Tarea 2
+
+Características de los 2 hostings:
+
+	     Idioma	Espacio web 	Transferencia mensual de datos 	Sitios web 	Soporte		WordPress
+
+000webhost   Español 	1 GB 		10 GB 				2 		No 		Sí
+InfinityFree Inglés 	Ilimitado 	Ilimitado 	 		2 		No 		Sí
+
+Hosting 1: 000webhost (Contraseña: fernandotirado) (URL: cmsjoomlafernando.000webhostapp.com)
+		       Database -> Name: monstra  Username: ftirado Password: ftirado
+
+Hosting 2: infinityfree	cmsjoomlafernando.epizy.com
+
+CMS elegido: Joomla
+
+Tarea 3
+
+Transferimos los archivos al host a través de Filezilla:
+
+!ftpinfinity.png!
+
+Instalamos, creamos contenido y cambiamos el estilo:
+
+!joomlainfinity.png!
+
+Añadimos un módulo, OSTime que nos proporciona una herramienta para realizar una cuenta atrás:
+
+!ostimer.png!
+
+Tarea 4
+
+El segundo hosting elegido ha sido 000webhost.
+
+Lo primero que hemos hecho ha sido exportar la base de datos del anterior hosting:
+
+!exportarinfinity.png!
+
+Tras esto, a través Filezilla copiamos todos nuestros archivos de configuración a nuestra máquina.
+Pasamos a través de Filezilla los archivos copiados anteriormente, al nuevo hosting.
+Ahora, creamos una base de datos en nuestro nuevo hosting e importamos el archivo que exportamos del anterior hosting, simplemente dandole a "Importar" y seleccionado el archivo nos quedaría tal que así:
+
+!importadowebhost.png!
+
+Ahora tenemos que modificar los siguientes campos en el archivo "configuration.php":
+
+public $host = 'localhost';
+public $user = 'id11469493_fernando';
+public $password = 'fernando';
+public $db = 'id11469493_fernando';
+public $log_path = '/storage/ssd1/493/11469493/public_html/administrator/logs'; (Poner rutas correctas)
+public $tmp_path = '/storage/ssd1/493/11469493/public_html/tmp'; (Poner rutas correctas)
+
+Probamos que efectivamente funciona la migración:
+
+!prueba000.png!
+
+Tarea 5
+
+

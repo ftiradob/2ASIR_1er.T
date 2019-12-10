@@ -1,0 +1,39 @@
+HERRAMIENTA WEB POSTGRESQL
+
+Para empezar, tenemos que instalar lo siguiente:
+
+vagrant@psqlserver:~$ sudo apt install php-pgsql
+vagrant@psqlserver:~$ sudo apt install phppgadmin
+
+Tras esto, tendremos que comentar la siguiente línea:
+
+vagrant@psqlserver:~$ sudo nano /etc/apache2/conf-available/phppgadmin.conf
+
+# Require local
+
+Ahora cambiamos el parametro "true" por "false" de la siguiente línea:
+
+vagrant@psqlserver:~$ sudo nano /etc/phppgadmin/config.inc.php
+
+$conf['extra_login_security'] = false;
+
+Tras esto, en este mismo fichero, añadimos los siguientes parámetros de conexión:
+
+vagrant@psqlserver:~$ sudo nano /etc/phppgadmin/config.inc.php
+
+// Display name for the server on the login screen
+        $conf['servers'][0]['desc'] = 'PostgreSQL';
+        $conf['servers'][1]['desc'] = 'Servidor';
+
+        // Hostname or IP address for server.  Use '' for UNIX domain soc$
+        // use 'localhost' for TCP/IP connection on this computer
+        $conf['servers'][0]['host'] = 'localhost';
+        $conf['servers'][1]['host'] = '192.168.1.55';
+
+        // Database port on server (5432 is the PostgreSQL default)
+        $conf['servers'][0]['port'] = 5432;
+        $conf['servers'][1]['port'] = 5432;
+
+Por último reiniciamos el servidor:
+
+vagrant@psqlserver:~$ sudo /etc/init.d/apache2 restart

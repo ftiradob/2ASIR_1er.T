@@ -1,0 +1,52 @@
+En Postgresql no existen los usuarios como tal, existen los roles: que son los encargados de gestionar los usuarios, grupos, etc..
+
+Otra forma de creacion
+
+Creamos un rol de usuario dandole permiso de conexión y le damos una contraseña:
+
+create role pruebarolusuario with login password 'dios';
+
+Tras esto, creamos una base de datos con el mismo nombre que el rol de usuario creado:
+
+create database pruebarolusuario;
+
+Ahora ya podemos conectarnos de la siguiente manera:
+
+postgres@psqlserver:~$ psql -U pruebarolusuario -d pruebarolusuario -h 127.0.0.1
+Password for user pruebarolusuario: 
+psql (11.5 (Debian 11.5-1+deb10u1))
+SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, bits: 256, compression: off)
+Type "help" for help.
+
+pruebarolusuario=> 
+
+
+
+
+
+
+Creamos el usuario becario en postgresql:
+
+vagrant@psqlserver:~$ sudo -u postgres createuser --interactive
+Enter name of role to add: becario
+Shall the new role be a superuser? (y/n) n
+Shall the new role be allowed to create databases? (y/n) n
+Shall the new role be allowed to create more new roles? (y/n) n
+
+Creamos el usuario becario en el sistema:
+
+vagrant@psqlserver:~$ sudo adduser becario
+
+Creamos una base de datos que usará nuestro usuario:
+
+vagrant@psqlserver:~$ sudo -u postgres createdb becario
+
+Nos conectamos:
+
+vagrant@psqlserver:~$ sudo -i -u becario
+
+becario@psqlserver:~$ psql
+psql (11.5 (Debian 11.5-1+deb10u1))
+Type "help" for help.
+
+becario=> 

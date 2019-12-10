@@ -1,0 +1,38 @@
+** Crear 2 mvs con disco en fichero utilizando aprovisionamiento ligero, una conectada a una red 10.10.10.0/24 NAT y la otra a un bridge externo. Driver virtio en todo lo que se pueda.
+
+Creamos los qcows:
+
+ftirado@nazo:~/qemu$ qemu-img create -f qcow2 fernando.qcow2 10G
+Formatting 'fernando.qcow2', fmt=qcow2 size=10737418240 cluster_size=65536 lazy_refcounts=off refcount_bits=16
+ftirado@nazo:~/qemu$ qemu-img create -f qcow2 tirado.qcow2 10G
+Formatting 'tirado.qcow2', fmt=qcow2 size=10737418240 cluster_size=65536 lazy_refcounts=off refcount_bits=16
+
+Creamos las MAC:
+
+MAC0=$(echo "02:"`openssl rand -hex 5 | sed 's/\(..\)/\1:/g; s/.$//'`)
+MAC1=$(echo "02:"`openssl rand -hex 5 | sed 's/\(..\)/\1:/g; s/.$//'`)
+
+Creamos los taps:
+
+
+
+Creamos 1 máquina:
+
+kvm -m 1024 -hda fernando.qcow2 \
+-cdrom /home/ftirado/Escritorio/Imágenes/debian-10.2.0-amd64-netinst.iso
+
+A partir de esta creamos 2 mediante aprovisionamiento ligero:
+
+qemu-img create -b fernando.qcow2 -f qcow2 bulnes.qcow2
+
+Importar imagen de disco existente, seleccionamos qcow2 y red br0.
+
+/etc/libvirt/qemu/debian10.xml
+
+Creamos red virtual nueva:
+Nombre -> Detalles
+Nombre: NAT
+10.10.10.0/24
+Reenvio red fisica
+DIspositivo br0
+modo nat

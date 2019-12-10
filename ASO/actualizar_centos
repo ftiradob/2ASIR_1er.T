@@ -1,0 +1,116 @@
+Actualizar de CentOS 7 a CentOS 8
+
+
+Descargar e instalar repositorio EPEL (Extra Packages for Enterprise Linux):
+
+[centos@salmorejo ~]$ sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+
+Instalar yum-utils:
+
+[centos@salmorejo ~]$ sudo yum -y install rpmconf yum-utils
+
+Te pregunta sobre los paquetes rpm:
+
+[centos@salmorejo ~]$ sudo rpmconf -a
+
+Hay que dejar todo default.
+
+Ahora borramos paquetes que no necesitamos:
+
+[centos@salmorejo ~]$ sudo package-cleanup --leaves
+[centos@salmorejo ~]$ sudo package-cleanup --orphans
+
+Instalamos DNF, que es un gestor de paquetería basado en RPM:
+
+[centos@salmorejo ~]$ sudo yum -y install dnf
+
+Eliminamos el gestor de paquetería YUM:
+
+[centos@salmorejo ~]$ sudo dnf -y remove yum yum-metadata-parser
+[centos@salmorejo ~]$ sudo rm -Rf /etc/yum
+
+Actualizamos con DNF:
+
+[centos@salmorejo ~]$ sudo sudo dnf -y upgrade
+
+Instalamos la nueva versión de CentOS:
+
+[centos@salmorejo ~]$ sudo dnf -y upgrade http://mirror.bytemark.co.uk/centos/8/BaseOS/x86_64/os/Packages/centos-release-8.0-0.1905.0.9.el8.x86_64.rpm
+
+Actualizamos el repositorio EPEL:
+
+[centos@salmorejo ~]$ sudo dnf -y upgrade https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+Borramos los archivos temporales alojados en el repositorio:
+
+[centos@salmorejo ~]$ sudo dnf clean all
+
+Borramos los kernel que teníamos instalados:
+
+[centos@salmorejo ~]$ sudo rpm -e `rpm -q kernel`
+
+Eliminamos los posibles conflictos:
+
+[centos@salmorejo ~]$ sudo rpm -e --nodeps sysvinit-tools
+
+Lanzamos la actualización:
+
+[centos@salmorejo ~]$ sudo dnf -y --releasever=8 --allowerasing --setopt=deltarpm=false distro-sync
+
+Realizamos la nueva configuración:
+
+[centos@salmorejo ~]$ sudo rpmconf -a
+
+Confirmamos que el nuevo kernel ha sido instalado:
+
+[centos@salmorejo ~]$ sudo rpm -e kernel-core
+[centos@salmorejo ~]$ sudo dnf -y install kernel-core
+
+Confirmamos que el grub esta actualizado y en el lugar correcto:
+
+[centos@salmorejo ~]$ ROOTDEV=`ls /dev/*da|head -1`;
+[centos@salmorejo ~]$ sudo echo "Detected root as $ROOTDEV..."
+[centos@salmorejo ~]$ sudo grub2-install $ROOTDEV
+
+Install Minimal package: Instalamos los paquetes "Minimal":
+
+[centos@salmorejo ~]$ sudo dnf -y groupupdate "Core" "Minimal Install"
+
+Comprobamos la versión de Centos:
+
+[centos@salmorejo ~]$ cat /etc/centos-release
+CentOS Linux release 8.0.1905 (Core)
+
+
+Una vez actualizado, nos dara varios errores al hacer un "update". Para corregir estos errores debemos de:
+
+[centos@salmorejo ~]$ sudo dnf remove libzip
+[centos@salmorejo ~]$ sudo dnf install php-pecl-zip
+[centos@salmorejo ~]$ sudo dnf update
+[centos@salmorejo ~]$ sudo rpm --nodeps -e gdbm
+[centos@salmorejo ~]$ sudo dnf -y upgrade --best --allowerasing
+[centos@salmorejo ~]$ sudo dnf remove epel-release
+[centos@salmorejo ~]$ sudo dnf install epel-release
+[centos@salmorejo ~]$ sudo dnf install python3 --allowerasing
+[centos@salmorejo ~]$ sudo dnf update --allowerasing
+
+Tras corregir los errores, vemos que tras hacer un "update", nos dice que esta todo correcto:
+
+[centos@salmorejo ~]$ sudo dnf update
+Última comprobación de caducidad de metadatos hecha hace 0:00:04, el lun 25 nov 2019 16:53:58 UTC.
+Dependencias resueltas.
+Nada por hacer.
+¡Listo!
+
+Una vez corregidos los errores, wordpress funcionará perfectamente; mientras que a nextcloud tendremos que hacerle unos ajustes:
+
+[centos@salmorejo php-fpm.d]$ sudo nano www.conf
+user = nginx
+group = nginx
+listen = /var/run/php-fpm/www.sock
+
+Reiniciamos los servicios y probamos:
+
+!wordpress8.png!
+
+!nextcloudcentos8.png!

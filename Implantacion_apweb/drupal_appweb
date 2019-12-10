@@ -1,0 +1,264 @@
+1.
+
+vagrant@drupal:~$ sudo apt install apache2
+vagrant@drupal:~$ sudo apt install mariadb-server
+vagrant@drupal:~$ sudo apt install php7.3
+vagrant@drupal:~$ sudo apt install php7.3-mysql
+vagrant@drupal:~$ sudo apt install libapache2-mod-php
+vagrant@drupal:~$ sudo apt install php-gd
+vagrant@drupal:~$ sudo apt install php-mysql
+vagrant@drupal:~$ sudo apt install php-xml
+vagrant@drupal:~$ sudo apt install php-mbstring
+
+
+2.
+
+Configuración dirección propia:
+
+ftirado@nazo:~$ sudo nano /etc/hosts
+172.22.8.11 www.ftirado-drupal.org
+
+Creamos el usuario de la BD e introducimos contenido dentro de ella:
+
+vagrant@drupal:~$ sudo mysql -u root -p
+Enter password: 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 39
+Server version: 10.3.17-MariaDB-0+deb10u1 Debian 10
+
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> create user 'ftirado' identified by 'dios';
+Query OK, 0 rows affected (0.005 sec)
+
+MariaDB [(none)]> GRANT ALL PRIVILEGES ON *.* TO 'ftirado'@'localhost'
+    -> IDENTIFIED BY 'dios' WITH GRANT OPTION;
+Query OK, 0 rows affected (0.001 sec)
+
+MariaDB [(none)]> exit
+Bye
+vagrant@drupal:~$ mysql -u ftirado -p
+Enter password: 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 40
+Server version: 10.3.17-MariaDB-0+deb10u1 Debian 10
+
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> create database ftirado_db;
+Query OK, 1 row affected (0.002 sec)
+
+Nos descargamos drupal, lo descomprimimos y lo añadimos al apache (sin olvidarnos de los ficheros ocultos generados al descomprimir):
+
+vagrant@drupal:~/hola/drupal-8.7.8$ sudo cp -rf * /var/www/html/
+vagrant@drupal:~/hola/drupal-8.7.8$ sudo cp -rf .csslintrc .editorconfig .eslintignore .eslintrc.json .gitattributes .ht.router.php .htaccess /var/www/html/
+vagrant@drupal:/var/www/html$ sudo chown -R www-data:www-data /var/www/html/
+vagrant@drupal:/var/www/html$ sudo chmod -R 755 /var/www/html/
+
+Para tener una URL limpia, añadimos el siguiente módulo y cambiamos el AllowOverride de "None" a "All":
+
+vagrant@drupal:/var/www/html$ sudo a2enmod rewrite
+vagrant@drupal:/etc/apache2$ sudo nano apache2.conf
+<Directory /var/www/>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+</Directory>
+
+Una vez lo tenemos instalado, cambiamos la plantilla y creamos contenido:
+
+Imagen
+
+Imagen
+
+Por último, añadimos un nuevo módulo:
+
+Imagen
+
+3.
+
+Creamos la copia de seguridad:
+
+vagrant@drupal:~$ mysqldump -v --opt --events --routines --triggers --default-character-set=utf8 -u ftirado -p ftirado_db > ftirado.sql
+
+vagrant@drupal:~$ ls
+ftirado.sql
+
+Añadimos una red interna a nuestro drupal y además, creamos otra máquina vagrant en la misma red interna:
+
+ config.vm.box = "debian/buster64"
+ config.vm.hostname = "drupal2"
+ config.vm.network :public_network,:bridge=>"wlo1"
+ config.vm.network :private_network, ip: "192.168.100.2", virtualbox__intnet: "drupal"
+ config.vm.provision "shell", run: "always" ,inline: <<-SHELL
+    sudo apt update
+    SHELL
+
+Creamos un usuario en el nuevo servidor:
+
+vagrant@drupal2:~$ sudo mysql -u root -p
+Enter password: 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 47
+Server version: 10.3.17-MariaDB-0+deb10u1 Debian 10
+
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> create user 'drupal2' identified by 'dios';
+Query OK, 0 rows affected (0.002 sec)
+
+MariaDB [(none)]> grant all privileges on *.* to 'drupal2'@'localhost' identified by 'dios' with grant option;
+Query OK, 0 rows affected (0.000 sec)
+
+Ahora le damos permisos también a la máquina con drupal:
+
+MariaDB [(none)]> grant all on drupal2_db.* to drupal2@192.168.100.1 identified by 'dios';
+
+Para restaurar la copia de seguridad en el nuevo servidor, tendremos que:
+
+vagrant@drupal2:~$ mysql -u drupal2 --password=dios drupal2_db < /vagrant/ftirado.sql 
+
+Ahora borramos la BD del servidor principal:
+
+vagrant@drupal:~$ sudo apt purge mariadb-*
+
+Para que la página funcione, tendremos que configurar diferentes cosas.
+
+Primero, en nuestra segunda máquina:
+
+vagrant@drupal2:/etc/mysql/mariadb.conf.d$ sudo nano 50-server.cnf
+
+bind-address            = 0.0.0.0
+
+Tras esto, en nuestra máquina con drupal:
+
+vagrant@drupal:/etc/apache2/sites-available$ sudo nano 000-default.conf
+
+ServerName www.ftirado-drupal.org
+        ServerAdmin webmaster@localhost
+        DocumentRoot /var/www/drupal/
+        <Directory "/var/www/drupal/">
+                Options FollowSymLinks
+                AllowOverride All
+                Order allow,deny
+                allow from all
+        </Directory>
+
+vagrant@drupal:/etc/apache2/sites-available$ sudo nano /var/www/html/sites/default/settings.php
+
+$databases['default']['default'] = array (
+  'database' => 'drupal2_db',
+  'username' => 'drupal2',
+  'password' => 'dios',
+  'prefix' => '',
+  'host' => '192.168.100.2',
+  'port' => '3306',
+  'namespace' => 'Drupal\\Core\\Database\\Driver\\mysql',
+  'driver' => 'mysql',
+);
+
+Tras esto, podemos hacer la comprobación del funcionamiento (comprobar "/etc/hosts" de la máquina anfitrión por si alguna IP ha cambiado):
+
+(drupalfinal.png)
+
+4.
+
+Vamos a usar "Anchor".
+
+Primero tendremos que bajarnoslo y descomprimirlo en una carpeta:
+
+vagrant@drupal:/var/www/anchor$ sudo wget https://github.com/anchorcms/anchor-cms/archive/0.12.7.zip
+
+Tras esto, creamos su respectivo fichero de configuración de apache. Ahora, nos pide que instalemos "composer" y ejecutemos:
+
+vagrant@drupal:/var/www/anchor$ sudo composer install
+Do not run Composer as root/super user! See https://getcomposer.org/root for details
+Loading composer repositories with package information
+Installing dependencies (including require-dev) from lock file
+Warning: The lock file is not up to date with the latest changes in composer.json. You may be getting outdated dependencies. Run update to update them.
+Package operations: 13 installs, 0 updates, 0 removals
+  - Installing indigophp/hash-compat (v1.1.0): Downloading (100%)         
+  - Installing ircmaxell/password-compat (v1.0.4): Downloading (100%)         
+  - Installing ircmaxell/security-lib (v1.1.0): Downloading (100%)         
+  - Installing ircmaxell/random-lib (v1.2.0): Downloading (100%)         
+  - Installing peridot-php/leo (1.6.1): Downloading (100%)         
+  - Installing symfony/polyfill-mbstring (v1.7.0): Downloading (100%)         
+  - Installing psr/log (1.0.2): Downloading (100%)         
+  - Installing symfony/debug (v4.0.5): Downloading (100%)         
+  - Installing symfony/console (v3.4.5): Downloading (100%)         
+  - Installing phpunit/php-timer (1.0.9): Downloading (100%)         
+  - Installing peridot-php/peridot-scope (1.3.0): Downloading (100%)         
+  - Installing evenement/evenement (v2.1.0): Downloading (100%)         
+  - Installing peridot-php/peridot (1.19.0): Downloading (100%)         
+symfony/console suggests installing symfony/event-dispatcher
+symfony/console suggests installing symfony/lock
+symfony/console suggests installing symfony/process
+Generating autoload files
+
+Prueba:
+
+(IMAGENANCHOR)
+
+5.
+
+La mayoría de los CMS tienen la posibilidad de mandar correos electrónicos (por ejemplo para notificar una nueva versión, notificar un comentario,…)
+Instala un servidor de correo electrónico en tu servidor. debes configurar un servidor relay de correo, para ello en el fichero /etc/postfix/main.cf, debes poner la siguiente línea:
+
+relayhost = babuino-smtp.gonzalonazareno.org
+
+Configura alguno de los CMS para utilizar tu servidor de correo y realiza una prueba de funcionamiento.
+Instalamos postfix
+
+sudo apt install postfix
+Le indicamos en la instalación que sea internet site y luego le indicamos alejandro.gonzalonazareno.org
+Copiamos lo indicado en el enunciado en el fichero /etc/postfix/main.cf
+
+relayhost = babuino-smtp.gonzalonazareno.org
+Comprobamos lo errores con el comando mailq y si todo esta bien nos debería de indicar Mail queue is empty:
+
+mailq
+      Mail queue is empty
+Cambiamos en drupal la configuración de la dirección de correo electrónico para notificaciones:
+
+Solo solo nos queda comprobar si funciona, para esto vamos a hacer que nos recuerde la contraseña en drupal y le indicamos nuestro correo.
+
+Revisamos nuestro correo para comprobar si ha llegado correctamente:
+
+-------------
+
+Instalamos el servidor de correo, indicamos "internet site" y ponemos el dominio:
+
+vagrant@drupal:~$ sudo apt install postfix
+
+Dominio: fernando.gonzalonazareno.org
+
+Configuramos el siguiente fichero:
+
+vagrant@drupal:~$ sudo nano /etc/postfix/main.cf
+
+smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_un$
+myhostname = servidorftirado
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+myorigin = /etc/mailname
+mydestination = $myhostname, fernando.gonzalonazareno.org, drupal, localhost.lo$
+relayhost = babuino-smtp.gonzalonazareno.org
+mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+mailbox_size_limit = 0
+recipient_delimiter = +
+inet_interfaces = all
+inet_protocols = all
+
+Indicamos nuestro correo en drupal:
+
+!correodrupal.png!
+
+Probamos diciendo que hemos olvidado nuestra contraseña:
+
+!demostracioncorreo.png!

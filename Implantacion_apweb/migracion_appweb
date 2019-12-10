@@ -1,0 +1,8 @@
+Migración aplicaciones PHP
+
+1) Copia BD
+2) Copiar ficheros app web
+3) Recupera BD en server 2
+4) Tenemos que configurar en el server 2 para poner las mismas credenciales de la BD
+5) Tengo que configurar el nuevo nombre de acceso
+6) Puede que tengamos que cambiar algo del css si le cambiamos el nombre a la BD

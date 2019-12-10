@@ -1,0 +1,28 @@
+Vagrant
+
+Podemos:
+
+- Maquinas virtuales
+- Contenedores
+- Configurar redes (ip, dhcp, rutas, ..)
+- Configurar la máquina (Nombre, SO, ..)
+- Aprovisionar la/s máquinas (posibilidad de ejecutar instrucciones la primera vez que iniciamos la máquina)(script, ansible, ..)
+
+Necesitamos:
+
+a) Crear un directorio por escenario
+b) Hacer "vagrant init" dentro del directorio para crear el VagrantFile
+c) Modificamos el fichero VagrantFile y le añadimos:
+	config.vm.box = "(nombre SO, vagrant box list)"
+	config.vm.hostname = "(nombre escenario)"
+d) Levantamos la máquina con vagrant up
+e) Conectamos con vagrant ssh
+f) vagrant halt apaga la maquina
+g) vagrant destroy nos cargammos la maquina
+
+El directori del escenario esta asociado al de la máquina virtual, por lo que si metemos algo en nuestra maquina y reiniciamos la máquina vagrant, estara el archivo en la máquina vagrant al volver a encenderla.
+
+Imágenes de los SO (No valen las convencionales, vagrant usa Box: vagrant box add debian/buster64)
+EN VAGRANT NUNCA SE DEBE DE TRABAJAR COMO ROOT.
+
+

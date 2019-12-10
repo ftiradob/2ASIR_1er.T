@@ -1,0 +1,54 @@
+
+Para configurar el servidor tenemos que cambiar la siguiente línea del fichero /etc/postgresql/11/main/postgresql.conf ,descomentandola y cambiando "localhost" por "*".
+
+
+#------------------------------------------------------------------------------
+# CONNECTIONS AND AUTHENTICATION
+#------------------------------------------------------------------------------
+
+# - Connection Settings -
+
+listen_addresses = '*'          # what IP address(es) to listen on;
+
+
+Además, también tenemos que cambiar la siguiente línea del fichero /etc/postgresql/11/main/pg_hba.conf ,borrando la direccion que venía por defecto y escribiendo "all".
+
+# IPv4 local connections:
+host    all             all             all                     md5
+
+Para que los cambios surjan efecto debemos reiniciar postgresql:
+
+sudo systemctl restart postgresql
+
+CREACIÓN DE UN USUARIO CON PERMISOS LIMITADOS PARA EL CLIENTE
+
+Primero creamos el usuario:
+createuser invitado1
+
+Luego, creamos una base de datos y le hacemos dueño de ella:
+createdb invitado1_db -O invitado1
+
+Tras esto, le ponemos una contraseña al usuario creado:
+postgres@nazo:~$ psql
+psql (11.5 (Debian 11.5-1+deb10u1))
+Digite «help» para obtener ayuda.
+
+postgres=# alter user invitado1 with password 'hola123';
+ALTER ROLE
+
+Ahora solo falta darle permisos al usuario de la siguiente manera:
+
+postgres=# \c invitado1_db
+Ahora está conectado a la base de datos «invitado1_db» con el usuario «postgres».
+invitado1_db=# grant all privileges on all tables in schema public to invitado1;
+GRANT
+
+INSTALACIÓN DEL CLIENTE
+
+Ahora procedemos a instalar el cliente de postgresql en la máquina cliente:
+
+sudo apt install postgresql-client
+
+Para conectarnos introducimos la siguiente sentencia; con la ip de la máquina servidor, un usuario sin permisos de superusuario y una base de datos.
+
+sudo psql -h 172.22.6.25 -U invitado1 -d invitado1_db

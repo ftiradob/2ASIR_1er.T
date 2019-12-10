@@ -1,0 +1,44 @@
+
+Ejer introduccion
+
+vagrant@raid:/etc/apache2/sites-available$ sudo cp 000-default.conf iesgn.conf
+vagrant@raid:/etc/apache2/sites-available$ sudo cp 000-default.conf departamentos.conf
+
+Configuración iesgn.conf:
+
+ServerName www.iesgn.org
+ServerAdmin webmaster@localhost
+DocumentRoot /var/www/iesgn
+
+Configuración departamentos.conf:
+
+ServerName www.departamentosgn.org
+ServerAdmin webmaster@localhost
+DocumentRoot /var/www/departamentos
+
+Activar sitios web:
+
+vagrant@raid:/etc/apache2/sites-available$ sudo a2ensite iesgn.conf 
+Enabling site iesgn.
+To activate the new configuration, you need to run:
+  systemctl reload apache2
+vagrant@raid:/etc/apache2/sites-available$ sudo a2ensite departamentos.conf 
+Enabling site departamentos.
+To activate the new configuration, you need to run:
+  systemctl reload apache2
+vagrant@raid:/etc/apache2/sites-available$ sudo systemctl reload apache2
+
+Crear directorios en /var/www/ , meter un index.html y darle permisos con:
+
+vagrant@raid: sudo chown -R www-data:www-data /var/www/departamentos
+vagrant@raid: sudo chown -R www-data:www-data /var/www/iesgn
+
+Cambiar el fichero /etc/hosts en tu máquina real, introduciendo la ip de la maquina virtual:
+
+127.0.0.1       localhost
+127.0.1.1       raid    raid
+172.22.2.167    www.iesgn.org   www.departamentosgn.org
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters

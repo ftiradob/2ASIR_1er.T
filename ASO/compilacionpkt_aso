@@ -1,0 +1,42 @@
+COMPILACIÓN DEL PAQUETE STRESS
+
+Primero nos descargamos su codigo fuente:
+
+ftirado@nazo:~/compilacion/stress$ git clone https://salsa.debian.org/debian/stress.git
+
+ftirado@nazo:~/compilacion/stress$ ls
+aclocal.m4  configure     debian   INSTALL      Makefile.in  README  TODO
+AUTHORS     configure.in  depcomp  install-sh   missing      src
+ChangeLog   COPYING       doc      Makefile.am  NEWS         test
+
+Tras esto, hacemos la configuración inicial:
+
+ftirado@nazo:~/compilacion/stress$ ./configure
+
+Ahora compilamos:
+
+ftirado@nazo:~/compilacion/stress$ make
+
+Por último instalamos el paquete:
+
+ftirado@nazo:~/compilacion/stress$ sudo make install
+
+Si queremos elegir la ruta de instalación, añadimos '--prefix= '.
+
+Si queremos eliminar los archivos residuales creados durante la compilación usaremos 'make clean'.
+
+Probamos que funciona el paquete:
+
+ftirado@nazo:~/compilacion/stress$ stress --cpu 8 --io 4 --vm 2 --vm-bytes 128M --timeout 10s
+stress: info: [7789] dispatching hogs: 8 cpu, 4 io, 2 vm, 0 hdd
+stress: info: [7789] successful run completed in 10s
+
+
+Para la desinstalación completa, echamos un vistazo al archivo de instalación:
+
+By default, `make install' will install the package's files in
+`/usr/local/bin', `/usr/local/man', etc.  You can specify an
+installation prefix other than `/usr/local' by giving `configure' the
+option `--prefix=PATH'.
+
+Nos dice donde se instala por defecto, por lo cual para la desinstalación completa tendremos que eliminar los archivos creados.
